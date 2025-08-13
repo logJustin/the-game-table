@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Game Table
+
+A mobile-first web app for friend groups to randomly select games and log gaming sessions. Built with a Roll20-inspired tabletop aesthetic.
+
+## Features
+
+- **Game Selection Spinner** - Add games to a digital wheel and spin for random selection
+- **Session Logging** - Track games played, duration, winners, and session history
+- **Multi-User Access** - Friends can join sessions from the same bookmarked URL
+- **Real-time Updates** - Live updates as friends add games to the spinner
+- **Roll20 Aesthetic** - Medieval/tabletop gaming visual design
+
+## Tech Stack
+
+- **Frontend:** Next.js 15 (React 19) with TypeScript
+- **Styling:** Tailwind CSS (mobile-first responsive design)  
+- **Database:** Supabase (PostgreSQL)
+- **Real-time:** Supabase real-time subscriptions
+- **Deployment:** Vercel
+- **UI/Animation:** Framer Motion, Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- Supabase account
+- Vercel account (for deployment)
 
+### Setup
+
+1. **Clone and install dependencies:**
+```bash
+npm install
+```
+
+2. **Set up environment variables:**
+Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+```bash
+cp .env.example .env.local
+```
+
+3. **Set up Supabase database:**
+Follow the database setup instructions in `docs/SETUP_GUIDE.md`
+
+4. **Run the development server:**
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **[Setup Guide](docs/SETUP_GUIDE.md)** - Complete step-by-step setup instructions
+- **[Implementation Guide](docs/THE_GAME_TABLE_IMPLEMENTATION_GUIDE.md)** - Detailed technical specifications
 
-## Learn More
+## Development Commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/           # Next.js app router pages
+├── components/    # Reusable UI components
+├── hooks/         # Custom React hooks
+├── lib/           # Utility libraries (Supabase client)
+├── types/         # TypeScript type definitions
+└── utils/         # Helper functions
+```
 
-## Deploy on Vercel
+## Current Development Status
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+✅ **Completed:**
+- Project setup and configuration
+- Database schema and Supabase connection
+- Environment configuration
+- Basic project structure
+- Roll20-inspired design specifications
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+🚧 **In Progress:**
+- UI styling implementation
+- Session management flows
+- Game spinner component
+
+📋 **Todo:**
+- Real-time updates
+- Game logging functionality
+- Mobile optimizations
