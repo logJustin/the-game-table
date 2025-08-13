@@ -83,13 +83,19 @@ src/
 - Environment configuration
 - Basic project structure
 - Roll20-inspired design specifications
+- **Game Spinner Component** with canvas-based wheel and wooden textures
+- **Board Game Search** with local database and external BGG API integration
+- **Image Loading** with skeleton placeholders and progressive loading
+- **CORS Proxy Fallback** system for reliable external API access
+- **Smart Caching** system with localStorage persistence
+- **Custom Game Creation** for handling search misses
 
 🚧 **In Progress:**
-- UI styling implementation
 - Session management flows
-- Game spinner component
+- Real-time Supabase integration
 
 📋 **Todo:**
-- Real-time updates
+- Real-time updates with Supabase subscriptions
 - Game logging functionality
 - Mobile optimizations
+- Production deployment configuration

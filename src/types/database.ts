@@ -14,6 +14,8 @@ export interface CurrentGame {
   game_name: string
   added_by: string
   created_at: string
+  game_image?: string
+  bgg_id?: string
 }
 
 export interface GameLog {
