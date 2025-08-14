@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen p-8" style={{ 
+    <div className="min-h-screen p-4 md:p-8" style={{ 
       backgroundColor: '#2C1810',
       backgroundImage: `
         linear-gradient(45deg, rgba(74, 52, 41, 0.1) 25%, transparent 25%),
@@ -66,7 +66,7 @@ export default function Home() {
 
         <div className="space-y-4">
           <Link
-            href="/spinner-test"
+            href="/session"
             className="inline-block px-8 py-4 rounded-lg font-bold text-xl transition-all duration-200 transform hover:scale-105"
             style={{
               background: 'linear-gradient(to bottom, #DAA520, #B8860B)',
@@ -75,11 +75,28 @@ export default function Home() {
               textShadow: '1px 1px 2px rgba(255, 255, 255, 0.3)'
             }}
           >
-            🎯 Try the Spinner Demo
+            🎯 Start Playing
           </Link>
           
+          <div className="flex gap-4 justify-center">
+            <Link
+              href="/spinner-test"
+              className="text-sm underline transition-colors duration-200"
+              style={{ color: '#B8860B' }}
+            >
+              🎯 Game Spinner
+            </Link>
+            <Link
+              href="/search-test"
+              className="text-sm underline transition-colors duration-200"
+              style={{ color: '#B8860B' }}
+            >
+              🔍 Game Library
+            </Link>
+          </div>
+          
           <p className="text-sm" style={{ color: '#E6DDD4' }}>
-            Experience the magic of the wooden game wheel
+            Create multiplayer sessions, spin the wheel, or browse the game library
           </p>
         </div>
       </div>

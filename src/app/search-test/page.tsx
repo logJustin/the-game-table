@@ -166,10 +166,10 @@ export default function SearchTest() {
             color: '#F5F5DC',
             textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)'
           }}>
-            Board Game Search Test Suite
+            Game Library
           </h1>
           <p className="text-lg" style={{ color: '#E6DDD4' }}>
-            Test and debug the search functionality
+            Browse and search thousands of board games
           </p>
         </div>
       

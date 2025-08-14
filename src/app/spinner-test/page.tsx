@@ -67,7 +67,7 @@ export default function SpinnerTest() {
             color: '#F5F5DC',
             textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)'
           }}>
-            The Game Table
+            Game Spinner
           </h1>
           <p className="text-lg" style={{ color: '#E6DDD4' }}>
             Spin the Wheel of Fate to Choose Your Adventure
