@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import GameLogModal from '@/components/GameLogModal'
-import { getGameLogs, deleteGameLog, formatDuration, formatPlayersText, formatDatePlayed } from '@/lib/game-service'
-import type { GameLog } from '@/types/database'
+import { getGameLogs, deleteGameLog, formatDuration, formatPlayersText, formatDatePlayed, getAvailableGames } from '@/lib/game-service'
+import type { GameLog, AvailableGame } from '@/types/database'
 
 export default function GameLogsPage() {
   const [logs, setLogs] = useState<GameLog[]>([])
+  const [availableGames, setAvailableGames] = useState<AvailableGame[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -19,11 +20,15 @@ export default function GameLogsPage() {
     try {
       setLoading(true)
       setError(null)
-      const gameLogs = await getGameLogs()
+      const [gameLogs, games] = await Promise.all([
+        getGameLogs(),
+        getAvailableGames()
+      ])
       setLogs(gameLogs)
+      setAvailableGames(games)
     } catch (err) {
-      console.error('Failed to load game logs:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load game logs')
+      console.error('Failed to load data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -251,6 +256,7 @@ export default function GameLogsPage() {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSuccess={handleModalSuccess}
+        availableGames={availableGames}
       />
     </div>
   )

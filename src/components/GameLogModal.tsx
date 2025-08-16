@@ -1,15 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { logGame } from '@/lib/game-service'
+
+interface AvailableGame {
+  id: string
+  game_name: string
+  game_image?: string
+  bgg_id?: string
+  created_at: string
+}
 
 interface GameLogModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  availableGames?: AvailableGame[]
+  selectedGameName?: string
 }
 
-export default function GameLogModal({ isOpen, onClose, onSuccess }: GameLogModalProps) {
+export default function GameLogModal({ isOpen, onClose, onSuccess, availableGames = [], selectedGameName = '' }: GameLogModalProps) {
   const [gameName, setGameName] = useState('')
   const [winner, setWinner] = useState('')
   const [players, setPlayers] = useState('')
@@ -19,13 +29,20 @@ export default function GameLogModal({ isOpen, onClose, onSuccess }: GameLogModa
   const [error, setError] = useState<string | null>(null)
 
   const resetForm = () => {
-    setGameName('')
+    setGameName(selectedGameName)
     setWinner('')
     setPlayers('')
     setDuration('')
     setNotes('')
     setError(null)
   }
+
+  // Update game name when selectedGameName changes
+  useEffect(() => {
+    if (selectedGameName) {
+      setGameName(selectedGameName)
+    }
+  }, [selectedGameName])
 
   const handleClose = () => {
     resetForm()
@@ -133,19 +150,67 @@ export default function GameLogModal({ isOpen, onClose, onSuccess }: GameLogModa
             <label className="block text-sm font-medium mb-2" style={{ color: '#F5F5DC' }}>
               Game Name *
             </label>
-            <input
-              type="text"
-              value={gameName}
-              onChange={(e) => setGameName(e.target.value)}
-              placeholder="e.g., Settlers of Catan"
-              required
-              className="w-full p-3 rounded border"
-              style={{
-                backgroundColor: 'rgba(245, 245, 220, 0.1)',
-                border: '1px solid #5C4033',
-                color: '#F5F5DC'
-              }}
-            />
+            {availableGames.length > 0 ? (
+              <select
+                value={gameName}
+                onChange={(e) => setGameName(e.target.value)}
+                required
+                className="w-full p-3 rounded border"
+                style={{
+                  backgroundColor: 'rgba(245, 245, 220, 0.1)',
+                  border: '1px solid #5C4033',
+                  color: '#F5F5DC'
+                }}
+              >
+                <option value="" style={{ backgroundColor: '#2C1810', color: '#F5F5DC' }}>
+                  Select a game from the spinner...
+                </option>
+                {availableGames.map((game) => (
+                  <option 
+                    key={game.id} 
+                    value={game.game_name}
+                    style={{ backgroundColor: '#2C1810', color: '#F5F5DC' }}
+                  >
+                    {game.game_name}
+                  </option>
+                ))}
+                <option value="__custom__" style={{ backgroundColor: '#2C1810', color: '#B8860B' }}>
+                  ✏️ Enter custom game name...
+                </option>
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={gameName}
+                onChange={(e) => setGameName(e.target.value)}
+                placeholder="e.g., Settlers of Catan"
+                required
+                className="w-full p-3 rounded border"
+                style={{
+                  backgroundColor: 'rgba(245, 245, 220, 0.1)',
+                  border: '1px solid #5C4033',
+                  color: '#F5F5DC'
+                }}
+              />
+            )}
+            
+            {/* Custom game name input (shown when "custom" is selected) */}
+            {gameName === '__custom__' && (
+              <input
+                type="text"
+                value=""
+                onChange={(e) => setGameName(e.target.value)}
+                placeholder="Enter custom game name..."
+                required
+                className="w-full p-3 rounded border mt-2"
+                style={{
+                  backgroundColor: 'rgba(245, 245, 220, 0.1)',
+                  border: '1px solid #5C4033',
+                  color: '#F5F5DC'
+                }}
+                autoFocus
+              />
+            )}
           </div>
 
           {/* Winner */}

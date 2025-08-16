@@ -424,41 +424,38 @@ export default function GameSpinner({
   }, [])
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_SIZE}
-          height={CANVAS_SIZE}
-          className={`
-            max-w-full h-auto 
-            ${disabled ? 'opacity-50' : 'cursor-pointer'} 
-            ${isAnimating ? 'pointer-events-none' : ''}
-            transition-opacity duration-200
-          `}
-          onMouseDown={handleInteraction}
-          onTouchStart={handleInteraction}
-          style={{ 
-            filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))',
-            maxWidth: '90vw',
-            maxHeight: '90vw'
-          }}
-        />
-        
-        {isAnimating && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg font-serif">
-              Spinning...
-            </div>
+    <div className="relative w-full h-full flex flex-col items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_SIZE}
+        height={CANVAS_SIZE}
+        className={`
+          ${disabled ? 'opacity-50' : 'cursor-pointer'} 
+          ${isAnimating ? 'pointer-events-none' : ''}
+          transition-opacity duration-200
+        `}
+        onMouseDown={handleInteraction}
+        onTouchStart={handleInteraction}
+        style={{ 
+          filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))',
+          width: '320px',
+          height: '320px'
+        }}
+      />
+      
+      {isAnimating && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg font-serif">
+            Spinning...
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
       <button
         onClick={spin}
         disabled={disabled || isAnimating || games.length === 0}
         className={`
-          mt-6 px-8 py-3 rounded-lg font-serif font-bold text-lg
+          absolute bottom-0 px-4 py-1 rounded-lg font-serif font-bold text-sm
           transition-all duration-200 transform
           ${disabled || isAnimating || games.length === 0
             ? 'bg-gray-400 text-gray-600 cursor-not-allowed'

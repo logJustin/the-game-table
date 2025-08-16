@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import GameSpinner from '@/components/GameSpinner'
 import BoardGameSearch from '@/components/BoardGameSearch'
+import GameLogModal from '@/components/GameLogModal'
 import { type BoardGame } from '@/lib/boardgamegeek'
 import { getAvailableGames, addAvailableGame, removeAvailableGame } from '@/lib/game-service'
 import type { AvailableGame } from '@/types/database'
@@ -19,6 +20,7 @@ export default function GameSpinnerPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedGame, setSelectedGame] = useState<SpinnerGame | null>(null)
+  const [showLogModal, setShowLogModal] = useState(false)
 
   useEffect(() => {
     loadGames()
@@ -68,6 +70,12 @@ export default function GameSpinnerPage() {
     setSelectedGame(game)
     // Auto-clear selection after 5 seconds
     setTimeout(() => setSelectedGame(null), 5000)
+  }
+
+  const handleLogModalSuccess = () => {
+    // Optionally clear the selected game after logging
+    setSelectedGame(null)
+    // Could also show a success message or redirect to logs
   }
 
   // Convert AvailableGame to SpinnerGame format
@@ -132,51 +140,63 @@ export default function GameSpinnerPage() {
               🎲 Selected Game 🎲
             </h2>
             <p className="text-xl">{selectedGame.name}</p>
-            <div className="mt-4">
-              <a
-                href="/logs"
-                className="inline-block px-6 py-2 rounded transition-all duration-200"
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={() => setShowLogModal(true)}
+                className="px-6 py-2 rounded transition-all duration-200 hover:scale-105"
                 style={{
                   background: 'linear-gradient(to bottom, #228B22, #006400)',
+                  color: '#F5F5DC'
+                }}
+              >
+                📝 Log This Game
+              </button>
+              <a
+                href="/logs"
+                className="inline-block px-6 py-2 rounded transition-all duration-200 hover:scale-105"
+                style={{
+                  background: 'linear-gradient(to bottom, #1E90FF, #0066CC)',
                   color: '#F5F5DC',
                   textDecoration: 'none'
                 }}
               >
-                📝 Log This Game →
+                📋 View All Logs →
               </a>
             </div>
           </div>
         )}
 
         {/* Game Spinner */}
-        <div className="flex justify-center mb-8">
-          {loading ? (
-            <div className="flex items-center justify-center w-80 h-80 rounded-full" style={{
-              backgroundColor: 'rgba(92, 64, 51, 0.3)',
-              border: '2px solid #5C4033'
-            }}>
-              <div className="text-center" style={{ color: '#F5F5DC' }}>
-                <div className="text-2xl mb-2">⏳</div>
-                <div>Loading games...</div>
+        <div className="flex justify-center mb-12">
+          <div className="w-80 h-80 flex items-center justify-center relative z-10">
+            {loading ? (
+              <div className="flex items-center justify-center w-full h-full rounded-full" style={{
+                backgroundColor: 'rgba(92, 64, 51, 0.3)',
+                border: '2px solid #5C4033'
+              }}>
+                <div className="text-center" style={{ color: '#F5F5DC' }}>
+                  <div className="text-2xl mb-2">⏳</div>
+                  <div>Loading games...</div>
+                </div>
               </div>
-            </div>
-          ) : games.length === 0 ? (
-            <div className="flex items-center justify-center w-80 h-80 rounded-full" style={{
-              backgroundColor: 'rgba(92, 64, 51, 0.3)',
-              border: '2px solid #5C4033'
-            }}>
-              <div className="text-center" style={{ color: '#F5F5DC' }}>
-                <div className="text-4xl mb-4">🎲</div>
-                <div className="text-lg mb-2">No games yet!</div>
-                <div className="text-sm opacity-75">Add some games below to get started</div>
+            ) : games.length === 0 ? (
+              <div className="flex items-center justify-center w-full h-full rounded-full" style={{
+                backgroundColor: 'rgba(92, 64, 51, 0.3)',
+                border: '2px solid #5C4033'
+              }}>
+                <div className="text-center" style={{ color: '#F5F5DC' }}>
+                  <div className="text-4xl mb-4">🎲</div>
+                  <div className="text-lg mb-2">No games yet!</div>
+                  <div className="text-sm opacity-75">Add some games below to get started</div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <GameSpinner 
-              games={spinnerGames} 
-              onGameSelected={handleGameSelected}
-            />
-          )}
+            ) : (
+              <GameSpinner 
+                games={spinnerGames} 
+                onGameSelected={handleGameSelected}
+              />
+            )}
+          </div>
         </div>
 
         {/* Game Management */}
@@ -298,6 +318,15 @@ export default function GameSpinnerPage() {
           </p>
         </div>
       </div>
+
+      {/* Game Log Modal */}
+      <GameLogModal
+        isOpen={showLogModal}
+        onClose={() => setShowLogModal(false)}
+        onSuccess={handleLogModalSuccess}
+        availableGames={games}
+        selectedGameName={selectedGame?.name}
+      />
     </div>
   )
 }
