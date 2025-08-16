@@ -19,9 +19,8 @@ interface NavGroup {
 }
 
 const mainNavItems: NavItem[] = [
-  { href: '/', label: 'Home', icon: '🏠' },
-  { href: '/session', label: 'Game Session', icon: '🎲' },
-  { href: '/spinner-test', label: 'Game Spinner', icon: '🎯' },
+  { href: '/logs', label: 'Game Logs', icon: '📋' },
+  { href: '/spinner', label: 'Game Spinner', icon: '🎯' },
   { href: '/search-test', label: 'Game Library', icon: '🔍' }
 ]
 
@@ -233,13 +232,10 @@ export default function Navigation() {
                 <span className="text-xl">{item.icon}</span>
                 <div className="flex-1">
                   <div className="font-medium">{item.label}</div>
-                  {item.href === '/session' && (
-                    <div className="text-xs opacity-75">Multiplayer Sessions</div>
+                  {item.href === '/logs' && (
+                    <div className="text-xs opacity-75">Game History & Winners</div>
                   )}
-                  {item.href === '/' && (
-                    <div className="text-xs opacity-75">Welcome</div>
-                  )}
-                  {item.href === '/spinner-test' && (
+                  {item.href === '/spinner' && (
                     <div className="text-xs opacity-75">Interactive Game Wheel</div>
                   )}
                   {item.href === '/search-test' && (
@@ -311,7 +307,7 @@ export default function Navigation() {
 
         <div className="p-6 border-t" style={{ borderColor: '#5C4033' }}>
           <div className="text-xs" style={{ color: '#E6DDD4' }}>
-            🎲 Create or join multiplayer sessions
+            📋 View game logs and winners
             <br />
             🎯 Spin the wheel to choose games
             <br />
