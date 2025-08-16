@@ -43,7 +43,7 @@ export default function EnvTest() {
         
         <div className="mt-6">
           <a
-            href="/session"
+            href="/logs"
             className="inline-block px-6 py-2 rounded transition-colors duration-200"
             style={{
               backgroundColor: 'rgba(184, 134, 11, 0.2)',
@@ -51,7 +51,7 @@ export default function EnvTest() {
               textDecoration: 'underline'
             }}
           >
-            ← Back to Session Page
+            ← Back to Game Logs
           </a>
         </div>
       </div>

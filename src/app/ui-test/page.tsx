@@ -42,18 +42,18 @@ export default function UITest() {
         
         <div className="mt-8 text-center">
           <div className="inline-flex gap-4">
-            <a
+            <Link
               href="/"
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
               ← Home
-            </a>
-            <a
-              href="/session"
+            </Link>
+            <Link
+              href="/logs"
               className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
             >
-              Session →
-            </a>
+              Game Logs →
+            </Link>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import * as sessionService from '@/lib/session-service'
+import { getAvailableGames, addAvailableGame, removeAvailableGame, getGameLogs, logGame } from '@/lib/game-service'
 
 export default function DatabaseTest() {
   const [results, setResults] = useState<string[]>([])
@@ -20,7 +20,7 @@ export default function DatabaseTest() {
       addResult('🔍 Testing database connection...')
       
       // Test 1: Basic connection
-      const { data, error } = await supabase.from('sessions').select('count').limit(1)
+      const { data, error } = await supabase.from('available_games').select('count').limit(1)
       if (error) {
         addResult(`❌ Database connection error: ${error.message}`)
         addResult(`❌ Error details: ${JSON.stringify(error, null, 2)}`)
@@ -28,45 +28,50 @@ export default function DatabaseTest() {
       }
       addResult('✅ Database connection successful')
       
-      // Test 2: Create session
-      addResult('🔄 Creating test session...')
-      const sessionCode = await sessionService.generateUniqueSessionCode()
-      const session = await sessionService.createSession({
-        hostName: 'Test Host',
-        sessionCode
-      })
-      addResult(`✅ Session created: ${session.session_code} (ID: ${session.id})`)
+      // Test 2: Get available games
+      addResult('🔄 Fetching available games...')
+      const games = await getAvailableGames()
+      addResult(`✅ Found ${games.length} available games`)
       
-      // Test 3: Join session
-      addResult('🔄 Adding participant...')
-      const participant = await sessionService.joinSession({
-        sessionId: session.id,
-        participantName: 'Test Player'
-      })
-      addResult(`✅ Participant added: ${participant.participant_name}`)
-      
-      // Test 4: Add game
+      // Test 3: Add a test game
       addResult('🔄 Adding test game...')
-      const game = await sessionService.addGameToSession({
-        sessionId: session.id,
-        gameName: 'Test Game',
-        addedBy: 'Test Host',
-        gameImage: 'https://example.com/test.jpg'
+      const testGame = await addAvailableGame({
+        gameName: `Test Game ${Date.now()}`,
+        gameImage: 'https://via.placeholder.com/150x150/B8860B/F5F5DC?text=Test',
+        bggId: 'test-bgg-id'
       })
-      addResult(`✅ Game added: ${game.game_name}`)
+      addResult(`✅ Game added: ${testGame.game_name} (ID: ${testGame.id})`)
       
-      // Test 5: Get session data
-      addResult('🔄 Fetching session data...')
-      const [games, participants] = await Promise.all([
-        sessionService.getSessionGames(session.id),
-        sessionService.getSessionParticipants(session.id)
-      ])
-      addResult(`✅ Found ${games.length} games and ${participants.length} participants`)
+      // Test 4: Get updated games list
+      addResult('🔄 Fetching updated games list...')
+      const updatedGames = await getAvailableGames()
+      addResult(`✅ Found ${updatedGames.length} available games (increased by 1)`)
       
-      // Test 6: Clean up
+      // Test 5: Get game logs
+      addResult('🔄 Fetching game logs...')
+      const logs = await getGameLogs()
+      addResult(`✅ Found ${logs.length} game logs`)
+      
+      // Test 6: Add a test game log
+      addResult('🔄 Adding test game log...')
+      const testLog = await logGame({
+        gameName: testGame.game_name,
+        winner: 'Test Player 1',
+        players: ['Test Player 1', 'Test Player 2', 'Test Player 3'],
+        durationMinutes: 45,
+        notes: 'This is a test game session'
+      })
+      addResult(`✅ Game log added: ${testLog.game_name} won by ${testLog.winner}`)
+      
+      // Test 7: Get updated logs
+      addResult('🔄 Fetching updated game logs...')
+      const updatedLogs = await getGameLogs()
+      addResult(`✅ Found ${updatedLogs.length} game logs (increased by 1)`)
+      
+      // Test 8: Clean up test data
       addResult('🔄 Cleaning up test data...')
-      await sessionService.endSession(session.id)
-      addResult('✅ Test session ended')
+      await removeAvailableGame(testGame.id)
+      addResult('✅ Test game removed')
       
       addResult('🎉 All database tests passed!')
       
@@ -106,7 +111,7 @@ export default function DatabaseTest() {
             Database Test
           </h1>
           <p className="text-lg" style={{ color: '#E6DDD4' }}>
-            Test Supabase database integration
+            Test anonymous game logging system
           </p>
         </div>
 
@@ -167,7 +172,7 @@ export default function DatabaseTest() {
 
         <div className="mt-6 text-center">
           <a
-            href="/session"
+            href="/logs"
             className="inline-block px-6 py-2 rounded transition-colors duration-200"
             style={{
               backgroundColor: 'rgba(184, 134, 11, 0.2)',
@@ -175,7 +180,7 @@ export default function DatabaseTest() {
               textDecoration: 'underline'
             }}
           >
-            ← Back to Session Page
+            ← Back to Game Logs
           </a>
         </div>
       </div>

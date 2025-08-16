@@ -59,53 +59,42 @@ export default function SchemaFix() {
 
   const createMissingTables = async () => {
     setLoading(true)
-    addResult('🔧 Creating missing tables and columns...')
+    addResult('🔧 Creating simplified schema for anonymous game logging...')
     
     const sqlCommands = [
-      // Create or recreate current_games table with all needed columns
-      `DROP TABLE IF EXISTS current_games;`,
-      `CREATE TABLE current_games (
+      // Drop old tables we no longer need (using CASCADE to handle foreign keys)
+      `DROP TABLE IF EXISTS session_participants CASCADE;`,
+      `DROP TABLE IF EXISTS current_games CASCADE;`,
+      `DROP TABLE IF EXISTS sessions CASCADE;`,
+      
+      // Create available_games table (persistent shared games)
+      `CREATE TABLE IF NOT EXISTS available_games (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
-        game_name TEXT NOT NULL,
-        added_by TEXT NOT NULL,
+        game_name TEXT NOT NULL UNIQUE,
         game_image TEXT,
         bgg_id TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
       );`,
       
-      // Create or recreate game_logs table
-      `CREATE TABLE IF NOT EXISTS game_logs (
+      // Create simplified game_logs table
+      `DROP TABLE IF EXISTS game_logs;`,
+      `CREATE TABLE game_logs (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
         game_name TEXT NOT NULL,
-        winner TEXT,
+        winner TEXT NOT NULL,
+        players TEXT[] NOT NULL,
         duration_minutes INTEGER,
         notes TEXT,
         played_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
       );`,
       
-      // Create or recreate session_participants table
-      `CREATE TABLE IF NOT EXISTS session_participants (
-        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
-        participant_name TEXT NOT NULL,
-        joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-      );`,
-      
       // Enable RLS
-      `ALTER TABLE current_games ENABLE ROW LEVEL SECURITY;`,
+      `ALTER TABLE available_games ENABLE ROW LEVEL SECURITY;`,
       `ALTER TABLE game_logs ENABLE ROW LEVEL SECURITY;`,
-      `ALTER TABLE session_participants ENABLE ROW LEVEL SECURITY;`,
       
-      // Add RLS policies for current_games
-      `CREATE POLICY "Allow all operations on current_games" ON current_games FOR ALL USING (true);`,
-      
-      // Add RLS policies for game_logs
-      `CREATE POLICY "Allow all operations on game_logs" ON game_logs FOR ALL USING (true);`,
-      
-      // Add RLS policies for session_participants
-      `CREATE POLICY "Allow all operations on session_participants" ON session_participants FOR ALL USING (true);`
+      // Add RLS policies (allow all operations)
+      `CREATE POLICY "Allow all operations on available_games" ON available_games FOR ALL USING (true);`,
+      `CREATE POLICY "Allow all operations on game_logs" ON game_logs FOR ALL USING (true);`
     ]
 
     for (const sql of sqlCommands) {
@@ -206,45 +195,40 @@ export default function SchemaFix() {
             Manual SQL Commands (Run in Supabase SQL Editor)
           </h3>
           <div className="bg-black p-4 rounded font-mono text-sm overflow-x-auto" style={{ color: '#00FF00' }}>
-            <pre>{`-- Fix current_games table
-DROP TABLE IF EXISTS current_games;
-CREATE TABLE current_games (
+            <pre>{`-- Clean up old schema and create simplified anonymous game logging system
+
+-- Remove old tables we no longer need (CASCADE handles foreign key dependencies)
+DROP TABLE IF EXISTS session_participants CASCADE;
+DROP TABLE IF EXISTS current_games CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+
+-- Available games (persistent, shared by everyone)
+CREATE TABLE IF NOT EXISTS available_games (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
-  game_name TEXT NOT NULL,
-  added_by TEXT NOT NULL,
+  game_name TEXT NOT NULL UNIQUE,
   game_image TEXT,
   bgg_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Fix game_logs table
-CREATE TABLE IF NOT EXISTS game_logs (
+-- Game logs (record of played games)
+DROP TABLE IF EXISTS game_logs;
+CREATE TABLE game_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
   game_name TEXT NOT NULL,
-  winner TEXT,
+  winner TEXT NOT NULL,
+  players TEXT[] NOT NULL,
   duration_minutes INTEGER,
   notes TEXT,
   played_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Fix session_participants table
-CREATE TABLE IF NOT EXISTS session_participants (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
-  participant_name TEXT NOT NULL,
-  joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
 -- Enable RLS and add policies
-ALTER TABLE current_games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE available_games ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE session_participants ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all operations on current_games" ON current_games FOR ALL USING (true);
-CREATE POLICY "Allow all operations on game_logs" ON game_logs FOR ALL USING (true);
-CREATE POLICY "Allow all operations on session_participants" ON session_participants FOR ALL USING (true);`}</pre>
+CREATE POLICY "Allow all operations on available_games" ON available_games FOR ALL USING (true);
+CREATE POLICY "Allow all operations on game_logs" ON game_logs FOR ALL USING (true);`}</pre>
           </div>
         </div>
 
@@ -298,7 +282,7 @@ CREATE POLICY "Allow all operations on session_participants" ON session_particip
             Test Database →
           </a>
           <a
-            href="/session"
+            href="/logs"
             className="inline-block px-6 py-2 rounded transition-colors duration-200"
             style={{
               backgroundColor: 'rgba(34, 139, 34, 0.2)',
@@ -306,7 +290,7 @@ CREATE POLICY "Allow all operations on session_participants" ON session_particip
               textDecoration: 'underline'
             }}
           >
-            Back to Session →
+            Back to Game Logs →
           </a>
         </div>
       </div>
