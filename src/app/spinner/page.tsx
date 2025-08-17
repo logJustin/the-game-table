@@ -5,7 +5,7 @@ import GameSpinner from '@/components/GameSpinner'
 import BoardGameSearch from '@/components/BoardGameSearch'
 import GameLogModal from '@/components/GameLogModal'
 import { type BoardGame } from '@/lib/boardgamegeek'
-import { getAvailableGames, addAvailableGame, removeAvailableGame } from '@/lib/game-service'
+import { getAvailableGames, addAvailableGame, removeAvailableGame, getCurrentSelection, setCurrentSelection, clearCurrentSelection } from '@/lib/game-service'
 import type { AvailableGame } from '@/types/database'
 
 interface SpinnerGame {
@@ -24,7 +24,36 @@ export default function GameSpinnerPage() {
 
   useEffect(() => {
     loadGames()
+    loadSelectedGame()
   }, [])
+
+  const loadSelectedGame = async () => {
+    try {
+      const currentSelection = await getCurrentSelection()
+      if (currentSelection && currentSelection.selected_game_id) {
+        setSelectedGame({
+          id: currentSelection.selected_game_id,
+          name: currentSelection.selected_game_name || '',
+          image: currentSelection.selected_game_image || undefined,
+          bggId: currentSelection.selected_game_bgg_id || undefined
+        })
+        return
+      }
+    } catch (error) {
+      console.warn('Failed to load selected game from database:', error)
+    }
+    
+    // Fallback to localStorage if database not available
+    try {
+      const savedGame = localStorage.getItem('gameTableSelectedGame')
+      if (savedGame) {
+        const game = JSON.parse(savedGame)
+        setSelectedGame(game)
+      }
+    } catch (error) {
+      console.warn('Failed to load selected game from localStorage:', error)
+    }
+  }
 
   const loadGames = async () => {
     try {
@@ -66,16 +95,91 @@ export default function GameSpinnerPage() {
     }
   }
 
-  const handleGameSelected = (game: SpinnerGame) => {
+  const clearSelectedGame = async () => {
+    setSelectedGame(null)
+    try {
+      await clearCurrentSelection()
+    } catch (error) {
+      console.warn('Failed to clear selected game from database:', error)
+      // Fallback to localStorage
+      try {
+        localStorage.removeItem('gameTableSelectedGame')
+      } catch (localError) {
+        console.warn('Failed to clear selected game from localStorage:', localError)
+      }
+    }
+  }
+
+  const handleClearAllGames = async () => {
+    try {
+      setError(null)
+      
+      // Immediately clear UI for responsive feel
+      const gamesToDelete = [...games]
+      setGames([])
+      
+      // Remove all games in the background
+      const deletePromises = gamesToDelete.map(game => removeAvailableGame(game.id))
+      await Promise.all(deletePromises)
+      
+      // Clear selected game if there was one
+      await clearSelectedGame()
+    } catch (err) {
+      console.error('Failed to clear all games:', err)
+      setError(err instanceof Error ? err.message : 'Failed to clear all games')
+      // If deletion failed, reload to get accurate state
+      await loadGames()
+    }
+  }
+
+  const handleGameSelected = async (game: SpinnerGame) => {
     setSelectedGame(game)
-    // Auto-clear selection after 5 seconds
-    setTimeout(() => setSelectedGame(null), 5000)
+    // Persist to database for global access
+    try {
+      await setCurrentSelection({
+        id: game.id,
+        name: game.name,
+        image: game.image,
+        bggId: game.bggId
+      })
+    } catch (error) {
+      console.warn('Failed to save selected game to database:', error)
+      // Fallback to localStorage
+      try {
+        localStorage.setItem('gameTableSelectedGame', JSON.stringify(game))
+      } catch (localError) {
+        console.warn('Failed to save selected game to localStorage:', localError)
+      }
+    }
+  }
+
+  const startNewGame = async () => {
+    // Clear selected game and all games from spinner
+    setSelectedGame(null)
+    try {
+      await clearCurrentSelection()
+    } catch (error) {
+      console.warn('Failed to clear selected game from database:', error)
+      // Fallback to localStorage
+      try {
+        localStorage.removeItem('gameTableSelectedGame')
+      } catch (localError) {
+        console.warn('Failed to clear selected game from localStorage:', localError)
+      }
+    }
+    
+    // Clear all games from spinner
+    await handleClearAllGames()
   }
 
   const handleLogModalSuccess = () => {
-    // Optionally clear the selected game after logging
+    // Clear the selected game after logging (but keep games in spinner)
     setSelectedGame(null)
-    // Could also show a success message or redirect to logs
+    try {
+      clearCurrentSelection()
+    } catch (error) {
+      console.warn('Failed to clear selected game:', error)
+    }
   }
 
   // Convert AvailableGame to SpinnerGame format
@@ -111,11 +215,6 @@ export default function GameSpinnerPage() {
           <p className="text-lg" style={{ color: '#E6DDD4' }}>
             Spin the Wheel of Fate to Choose Your Adventure
           </p>
-          {games.length > 0 && (
-            <p className="text-sm mt-2" style={{ color: '#B8860B' }}>
-              {games.length} games available • Anyone can add or remove games
-            </p>
-          )}
         </div>
 
         {/* Error Display */}
@@ -131,37 +230,56 @@ export default function GameSpinnerPage() {
 
         {/* Selected Game Display */}
         {selectedGame && (
-          <div className="mb-8 p-6 rounded-lg text-center animate-pulse" style={{
+          <div className="mb-8 p-6 rounded-lg text-center relative" style={{
             backgroundColor: 'rgba(184, 134, 11, 0.2)',
             border: '2px solid #B8860B',
             color: '#F5F5DC'
           }}>
+            {/* Close Button */}
+            <button
+              onClick={() => clearSelectedGame()}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer"
+              style={{
+                background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
+                color: '#F5F5DC',
+                fontSize: '16px'
+              }}
+              title="Clear selected game"
+            >
+              ×
+            </button>
+            
             <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'serif' }}>
-              🎲 Selected Game 🎲
+              🎲 Currently Selected 🎲
             </h2>
-            <p className="text-xl">{selectedGame.name}</p>
-            <div className="mt-4 flex gap-3">
+            <p className="text-xl font-bold mb-1">{selectedGame.name}</p>
+            <p className="text-sm opacity-75 mb-4">Ready to play! Come back here after your game to log the results.</p>
+            
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {/* Log Results - Primary Action */}
               <button
                 onClick={() => setShowLogModal(true)}
-                className="px-6 py-2 rounded transition-all duration-200 hover:scale-105"
+                className="px-6 py-3 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-105 cursor-pointer"
                 style={{
                   background: 'linear-gradient(to bottom, #228B22, #006400)',
+                  color: '#F5F5DC',
+                  boxShadow: '0 4px 8px rgba(34, 139, 34, 0.3)'
+                }}
+              >
+                🏆 Log Results
+              </button>
+              
+              {/* Secondary Action */}
+              <button
+                onClick={() => startNewGame()}
+                className="px-4 py-3 rounded transition-all duration-200 hover:scale-105 text-sm cursor-pointer"
+                style={{
+                  background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
                   color: '#F5F5DC'
                 }}
               >
-                📝 Log This Game
+                🔄 Start New Game
               </button>
-              <a
-                href="/logs"
-                className="inline-block px-6 py-2 rounded transition-all duration-200 hover:scale-105"
-                style={{
-                  background: 'linear-gradient(to bottom, #1E90FF, #0066CC)',
-                  color: '#F5F5DC',
-                  textDecoration: 'none'
-                }}
-              >
-                📋 View All Logs →
-              </a>
             </div>
           </div>
         )}
@@ -222,6 +340,11 @@ export default function GameSpinnerPage() {
                   onGameSelected={handleBoardGameSelected}
                   playerName="anonymous" // Not used in new system
                   placeholder="Search for board games..."
+                  excludeGames={games.map(game => ({ 
+                    id: game.id, 
+                    name: game.game_name, 
+                    bgg_id: game.bgg_id 
+                  }))}
                 />
               </div>
               
@@ -237,12 +360,28 @@ export default function GameSpinnerPage() {
             backgroundColor: 'rgba(92, 64, 51, 0.3)',
             border: '1px solid #5C4033'
           }}>
-            <h3 className="text-xl font-bold mb-4" style={{ 
-              fontFamily: 'serif',
-              color: '#F5F5DC' 
-            }}>
-              Available Games ({games.length})
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold" style={{ 
+                fontFamily: 'serif',
+                color: '#F5F5DC' 
+              }}>
+                Available Games ({games.length})
+              </h3>
+              {games.length > 0 && (
+                <button
+                  onClick={handleClearAllGames}
+                  className="px-3 py-1 rounded text-sm font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
+                    color: '#F5F5DC',
+                    boxShadow: '0 2px 4px rgba(139, 21, 56, 0.3)'
+                  }}
+                  title="Remove all games from the spinner"
+                >
+                  🗑️ Clear All
+                </button>
+              )}
+            </div>
 
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {games.length === 0 ? (
@@ -286,7 +425,7 @@ export default function GameSpinnerPage() {
                     
                     <button
                       onClick={() => handleRemoveGame(game.id)}
-                      className="flex-shrink-0 px-3 py-1 rounded text-sm font-bold transition-all duration-200 hover:scale-105"
+                      className="flex-shrink-0 px-3 py-1 rounded text-sm font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
                       style={{
                         background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
                         color: '#F5F5DC',
@@ -313,7 +452,7 @@ export default function GameSpinnerPage() {
           </h3>
           <p className="text-sm">
             Add games that everyone can see and use. Spin the wheel to pick a game randomly.
-            After playing, <a href="/logs" className="underline" style={{ color: '#B8860B' }}>log your game session</a> to 
+            After playing, <a href="/logs" className="underline cursor-pointer" style={{ color: '#B8860B' }}>log your game session</a> to 
             track winners, duration, and players!
           </p>
         </div>

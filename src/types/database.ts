@@ -16,3 +16,12 @@ export interface GameLog {
   played_at: string
   notes: string | null
 }
+
+export interface CurrentSelection {
+  id: number
+  selected_game_id: string | null
+  selected_game_name: string | null
+  selected_game_image: string | null
+  selected_game_bgg_id: string | null
+  updated_at: string
+}

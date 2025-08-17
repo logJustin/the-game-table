@@ -7,9 +7,10 @@ interface BoardGameSearchProps {
   onGameSelected: (game: BoardGame & { addedBy: string }) => void
   playerName: string
   placeholder?: string
+  excludeGames?: { id?: string, name: string, bgg_id?: string }[] // Games to filter out
 }
 
-export default function BoardGameSearch({ onGameSelected, playerName, placeholder = "Search for a board game..." }: BoardGameSearchProps) {
+export default function BoardGameSearch({ onGameSelected, playerName, placeholder = "Search for a board game...", excludeGames = [] }: BoardGameSearchProps) {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<BGGSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -22,10 +23,30 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
   const inputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Load popular games on mount
+  // Helper function to check if a game is already added
+  const isGameAlreadyAdded = (gameId: string, gameName: string, bggId?: string): boolean => {
+    return excludeGames.some(excludedGame => {
+      // Match by BGG ID first (most reliable)
+      if (bggId && excludedGame.bgg_id && bggId === excludedGame.bgg_id) {
+        return true
+      }
+      // Match by internal ID
+      if (excludedGame.id && excludedGame.id === gameId) {
+        return true
+      }
+      // Match by name (case-insensitive)
+      return excludedGame.name.toLowerCase() === gameName.toLowerCase()
+    })
+  }
+
+  // Load popular games on mount and filter out already added ones
   useEffect(() => {
-    setPopularGames(getPopularGames(8))
-  }, [])
+    const allPopularGames = getPopularGames(12) // Get more to account for filtering
+    const filteredPopularGames = allPopularGames.filter(game => 
+      !isGameAlreadyAdded(game.id, game.name, game.id)
+    ).slice(0, 8) // Take first 8 after filtering
+    setPopularGames(filteredPopularGames)
+  }, [excludeGames])
 
   // Handle search with debouncing and external fallback
   useEffect(() => {
@@ -60,7 +81,11 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
         if (abortController.signal.aborted) return
         
         if (localResults.length > 0) {
-          setSearchResults(localResults)
+          // Filter out already added games
+          const filteredLocalResults = localResults.filter(result => 
+            !isGameAlreadyAdded(result.id, result.name, result.id)
+          )
+          setSearchResults(filteredLocalResults)
           setIsSearching(false)
           return
         }
@@ -73,15 +98,24 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
         // Check if search was cancelled
         if (abortController.signal.aborted) return
         
-        setSearchResults(externalResults)
+        // Filter out already added games from external results
+        const filteredExternalResults = externalResults.filter(result => 
+          !isGameAlreadyAdded(result.id, result.name, result.id)
+        )
+        
+        setSearchResults(filteredExternalResults)
         setIsSearchingExternal(false)
         setHasTriedExternal(true)
         
-        if (externalResults.length === 0) {
-          setSearchError(`No games found for "${query}". Try a different search term.`)
+        if (filteredExternalResults.length === 0) {
+          if (externalResults.length > 0) {
+            setSearchError(`All matching games for "${query}" are already in your spinner. Try a different search term.`)
+          } else {
+            setSearchError(`No games found for "${query}". Try a different search term.`)
+          }
         } else {
           // Load images progressively for external results (don't block UI)
-          loadSearchResultImages(externalResults).then(resultsWithImages => {
+          loadSearchResultImages(filteredExternalResults).then(resultsWithImages => {
             // Only update if this search wasn't cancelled and results still exist
             if (!abortController.signal.aborted && setSearchResults) {
               setSearchResults(prev => prev.length > 0 ? resultsWithImages : prev)
@@ -240,7 +274,7 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                 <button
                   key={result.id}
                   onClick={() => handleGameSelect(result)}
-                  className="w-full text-left px-4 py-3 hover:bg-opacity-20 transition-colors border-b last:border-b-0 flex items-center gap-3"
+                  className="w-full text-left px-4 py-3 hover:bg-opacity-20 transition-colors border-b last:border-b-0 flex items-center gap-3 cursor-pointer"
                   style={{ 
                     color: '#2F1B14',
                     borderColor: 'rgba(184, 134, 11, 0.2)'
@@ -306,7 +340,7 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
               
               <button
                 onClick={handleCreateCustomGame}
-                className="px-4 py-2 rounded font-bold transition-all duration-200 transform hover:scale-105"
+                className="px-4 py-2 rounded font-bold transition-all duration-200 transform hover:scale-105 cursor-pointer"
                 style={{
                   background: 'linear-gradient(to bottom, #228B22, #006400)',
                   color: '#F5F5DC',
@@ -332,13 +366,16 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                 backgroundColor: 'rgba(184, 134, 11, 0.1)'
               }}>
                 Popular Games - Click to Add
+                {excludeGames.length > 0 && (
+                  <span className="font-normal opacity-75 ml-2">(filtered)</span>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-1">
                 {popularGames.map((game) => (
                   <button
                     key={game.id}
                     onClick={() => handlePopularGameSelect(game)}
-                    className="w-full text-left px-4 py-3 hover:bg-opacity-20 transition-colors border-b last:border-b-0 flex items-center gap-3"
+                    className="w-full text-left px-4 py-3 hover:bg-opacity-20 transition-colors border-b last:border-b-0 flex items-center gap-3 cursor-pointer"
                     style={{ 
                       color: '#2F1B14',
                       borderColor: 'rgba(184, 134, 11, 0.2)'

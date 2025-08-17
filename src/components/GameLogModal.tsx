@@ -22,7 +22,6 @@ interface GameLogModalProps {
 export default function GameLogModal({ isOpen, onClose, onSuccess, availableGames = [], selectedGameName = '' }: GameLogModalProps) {
   const [gameName, setGameName] = useState('')
   const [winner, setWinner] = useState('')
-  const [players, setPlayers] = useState('')
   const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,7 +30,6 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
   const resetForm = () => {
     setGameName(selectedGameName)
     setWinner('')
-    setPlayers('')
     setDuration('')
     setNotes('')
     setError(null)
@@ -55,18 +53,8 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
     setError(null)
 
     try {
-      // Parse players from comma-separated string
-      const playerArray = players
-        .split(',')
-        .map(p => p.trim())
-        .filter(p => p.length > 0)
-
-      if (playerArray.length === 0) {
-        throw new Error('Please enter at least one player')
-      }
-
       if (!winner.trim()) {
-        throw new Error('Please enter the winner')
+        throw new Error('Please select a winner')
       }
 
       if (!gameName.trim()) {
@@ -82,7 +70,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
       await logGame({
         gameName: gameName.trim(),
         winner: winner.trim(),
-        players: playerArray,
+        players: [winner.trim()],
         durationMinutes,
         notes: notes.trim() || undefined
       })
@@ -90,6 +78,9 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
       resetForm()
       onSuccess()
       onClose()
+      
+      // Navigate to logs page after successful submission
+      window.location.href = '/logs'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log game')
     } finally {
@@ -117,18 +108,18 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
               fontFamily: 'serif',
               color: '#F5F5DC' 
             }}>
-              📝 Log Game Session
+              🏆 Log Game Results
             </h2>
             <button
               onClick={handleClose}
-              className="text-2xl transition-colors duration-200"
+              className="text-2xl transition-colors duration-200 cursor-pointer"
               style={{ color: '#E6DDD4' }}
             >
               ×
             </button>
           </div>
           <p className="text-sm mt-1" style={{ color: '#E6DDD4' }}>
-            Record your game session details
+            Who won and how long did it take?
           </p>
         </div>
 
@@ -155,14 +146,14 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
                 value={gameName}
                 onChange={(e) => setGameName(e.target.value)}
                 required
-                className="w-full p-3 rounded border"
+                className="w-full p-3 rounded border cursor-pointer"
                 style={{
                   backgroundColor: 'rgba(245, 245, 220, 0.1)',
                   border: '1px solid #5C4033',
                   color: '#F5F5DC'
                 }}
               >
-                <option value="" style={{ backgroundColor: '#2C1810', color: '#F5F5DC' }}>
+                <option value="" style={{ backgroundColor: '#2C1810', color: '#F5F5DC' }} className="cursor-pointer">
                   Select a game from the spinner...
                 </option>
                 {availableGames.map((game) => (
@@ -170,11 +161,12 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
                     key={game.id} 
                     value={game.game_name}
                     style={{ backgroundColor: '#2C1810', color: '#F5F5DC' }}
+                    className="cursor-pointer"
                   >
                     {game.game_name}
                   </option>
                 ))}
-                <option value="__custom__" style={{ backgroundColor: '#2C1810', color: '#B8860B' }}>
+                <option value="__custom__" style={{ backgroundColor: '#2C1810', color: '#B8860B' }} className="cursor-pointer">
                   ✏️ Enter custom game name...
                 </option>
               </select>
@@ -215,51 +207,53 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
 
           {/* Winner */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#F5F5DC' }}>
-              Winner *
+            <label className="block text-sm font-medium mb-3" style={{ color: '#F5F5DC' }}>
+              Who won? *
             </label>
-            <input
-              type="text"
-              value={winner}
-              onChange={(e) => setWinner(e.target.value)}
-              placeholder="e.g., Alice"
-              required
-              className="w-full p-3 rounded border"
-              style={{
-                backgroundColor: 'rgba(245, 245, 220, 0.1)',
-                border: '1px solid #5C4033',
-                color: '#F5F5DC'
-              }}
-            />
-          </div>
-
-          {/* Players */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#F5F5DC' }}>
-              All Players *
-            </label>
-            <input
-              type="text"
-              value={players}
-              onChange={(e) => setPlayers(e.target.value)}
-              placeholder="e.g., Alice, Bob, Charlie"
-              required
-              className="w-full p-3 rounded border"
-              style={{
-                backgroundColor: 'rgba(245, 245, 220, 0.1)',
-                border: '1px solid #5C4033',
-                color: '#F5F5DC'
-              }}
-            />
-            <p className="text-xs mt-1" style={{ color: '#E6DDD4' }}>
-              Separate multiple players with commas
-            </p>
+            <div className="space-y-2">
+              {['Holly', 'Tori', 'Nash', 'Justin'].map((player) => (
+                <label
+                  key={player}
+                  className="flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors duration-200"
+                  style={{
+                    backgroundColor: winner === player ? 'rgba(184, 134, 11, 0.2)' : 'rgba(245, 245, 220, 0.1)',
+                    border: winner === player ? '2px solid #B8860B' : '1px solid #5C4033',
+                    color: '#F5F5DC'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="winner"
+                    value={player}
+                    checked={winner === player}
+                    onChange={(e) => setWinner(e.target.value)}
+                    className="sr-only"
+                  />
+                  <div 
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                    style={{
+                      borderColor: winner === player ? '#B8860B' : '#5C4033',
+                      backgroundColor: winner === player ? '#B8860B' : 'transparent'
+                    }}
+                  >
+                    {winner === player && (
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: '#2C1810' }}
+                      />
+                    )}
+                  </div>
+                  <span className="font-medium text-lg">{player}</span>
+                  {winner === player && <span className="ml-auto text-lg">🏆</span>}
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Duration */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: '#F5F5DC' }}>
-              Duration (minutes)
+              How long did it take? (minutes, optional)
             </label>
             <input
               type="number"
@@ -301,7 +295,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1 py-3 px-4 rounded font-medium transition-all duration-200 disabled:opacity-50"
+              className="flex-1 py-3 px-4 rounded font-medium transition-all duration-200 disabled:opacity-50 cursor-pointer"
               style={{
                 backgroundColor: 'rgba(108, 117, 125, 0.2)',
                 border: '1px solid #6C757D',
@@ -313,7 +307,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 px-4 rounded font-bold transition-all duration-200 disabled:opacity-50"
+              className="flex-1 py-3 px-4 rounded font-bold transition-all duration-200 disabled:opacity-50 cursor-pointer"
               style={{
                 background: loading 
                   ? 'linear-gradient(to bottom, #6C757D, #495057)'
@@ -322,7 +316,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
                 boxShadow: '0 2px 4px rgba(34, 139, 34, 0.3)'
               }}
             >
-              {loading ? 'Logging...' : '📝 Log Game'}
+              {loading ? 'Logging...' : '🏆 Log Game'}
             </button>
           </div>
         </form>

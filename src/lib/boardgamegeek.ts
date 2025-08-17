@@ -64,13 +64,12 @@ async function fetchWithCORSFallback(url: string, options: RequestInit = {}): Pr
   throw new Error(`All CORS proxies failed: ${errors.join('; ')}`)
 }
 
-// Comprehensive board games database with reliable image URLs
+// Comprehensive board games database (text-only for reliable rendering)
 export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '13', 
     name: 'Catan', 
     aliases: ['Settlers of Catan', 'The Settlers of Catan'],
-    image: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=300&h=300&fit=crop&crop=center',
     minPlayers: 3,
     maxPlayers: 4,
     playingTime: 60,
@@ -79,7 +78,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '9209', 
     name: 'Ticket to Ride', 
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 5,
     playingTime: 60,
@@ -88,7 +86,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '68448', 
     name: 'Azul', 
-    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 4,
     playingTime: 45,
@@ -97,7 +94,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '148228', 
     name: 'Splendor', 
-    image: 'https://images.unsplash.com/photo-1596503856381-8b3fd763c0e8?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 4,
     playingTime: 30,
@@ -106,7 +102,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '30549', 
     name: 'Pandemic', 
-    image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 4,
     playingTime: 45,
@@ -116,7 +111,6 @@ export const POPULAR_GAMES: BoardGame[] = [
     id: '70323', 
     name: 'King of Tokyo', 
     aliases: ['King of New York'],
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 6,
     playingTime: 30,
@@ -125,7 +119,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '167791', 
     name: 'Terraforming Mars', 
-    image: 'https://images.unsplash.com/photo-1446776876961-699452ca1c54?w=300&h=300&fit=crop&crop=center',
     minPlayers: 1,
     maxPlayers: 5,
     playingTime: 120,
@@ -134,7 +127,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '174430', 
     name: 'Gloomhaven', 
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center',
     minPlayers: 1,
     maxPlayers: 4,
     playingTime: 120,
@@ -143,7 +135,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '36218', 
     name: 'Dominion', 
-    image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 4,
     playingTime: 30,
@@ -152,7 +143,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '31260', 
     name: '7 Wonders', 
-    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 7,
     playingTime: 30,
@@ -162,7 +152,6 @@ export const POPULAR_GAMES: BoardGame[] = [
     id: '1406', 
     name: 'Monopoly', 
     aliases: ['Monopoly Classic', 'The Monopoly Game'],
-    image: 'https://images.unsplash.com/photo-1561658917-4e0c3623b7b6?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 8,
     playingTime: 180,
@@ -171,7 +160,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '822', 
     name: 'Scrabble', 
-    image: 'https://images.unsplash.com/photo-1632501641765-e568d28b0015?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 4,
     playingTime: 90,
@@ -180,7 +168,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '15987', 
     name: 'Arkham Horror', 
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center',
     minPlayers: 1,
     maxPlayers: 8,
     playingTime: 240,
@@ -189,7 +176,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '120677', 
     name: 'Terra Mystica', 
-    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop&crop=center',
     minPlayers: 2,
     maxPlayers: 5,
     playingTime: 150,
@@ -198,7 +184,6 @@ export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '169786', 
     name: 'Scythe', 
-    image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=300&h=300&fit=crop&crop=center',
     minPlayers: 1,
     maxPlayers: 5,
     playingTime: 115,

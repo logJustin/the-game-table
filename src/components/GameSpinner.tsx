@@ -12,7 +12,7 @@ interface Game {
 
 interface GameSpinnerProps {
   games: Game[]
-  onGameSelected?: (game: Game) => void
+  onGameSelected?: (game: Game) => void | Promise<void>
   disabled?: boolean
 }
 
@@ -152,8 +152,8 @@ export default function GameSpinner({
 
     // Calculate position for content (image or text)
     const contentAngle = (startAngle + endAngle) / 2
-    const imageRadius = WHEEL_RADIUS * 0.65
-    const textRadius = WHEEL_RADIUS * 0.8
+    const imageRadius = WHEEL_RADIUS * 0.6
+    const textRadius = WHEEL_RADIUS * 0.7
     const imageX = centerX + Math.cos(contentAngle) * imageRadius
     const imageY = centerY + Math.sin(contentAngle) * imageRadius
     const textX = centerX + Math.cos(contentAngle) * textRadius
@@ -165,29 +165,39 @@ export default function GameSpinner({
     if (gameImage) {
       ctx.save()
       
-      // Create clipping path for the image area
-      const imageSize = 60
-      ctx.beginPath()
-      ctx.arc(imageX, imageY, imageSize / 2, 0, 2 * Math.PI)
-      ctx.clip()
-      
-      // Draw image
-      ctx.drawImage(
-        gameImage, 
-        imageX - imageSize / 2, 
-        imageY - imageSize / 2, 
-        imageSize, 
-        imageSize
-      )
-      
-      ctx.restore()
+      try {
+        // Create clipping path for the image area
+        const imageSize = 60
+        ctx.beginPath()
+        ctx.arc(imageX, imageY, imageSize / 2, 0, 2 * Math.PI)
+        ctx.clip()
+        
+        // Draw image
+        ctx.drawImage(
+          gameImage, 
+          imageX - imageSize / 2, 
+          imageY - imageSize / 2, 
+          imageSize, 
+          imageSize
+        )
+        
+        ctx.restore()
+      } catch (error) {
+        // If drawing fails (e.g., tainted canvas), just restore and continue
+        ctx.restore()
+        console.warn(`Failed to draw image for ${game.name}:`, error)
+      }
       
       // Draw image border
-      ctx.beginPath()
-      ctx.arc(imageX, imageY, imageSize / 2, 0, 2 * Math.PI)
-      ctx.strokeStyle = colors.brassGold
-      ctx.lineWidth = 2
-      ctx.stroke()
+      try {
+        ctx.beginPath()
+        ctx.arc(imageX, imageY, 60 / 2, 0, 2 * Math.PI)
+        ctx.strokeStyle = colors.brassGold
+        ctx.lineWidth = 2
+        ctx.stroke()
+      } catch (error) {
+        console.warn(`Failed to draw border for ${game.name}:`, error)
+      }
       
       // Draw game name below image
       ctx.save()
@@ -195,18 +205,18 @@ export default function GameSpinner({
       ctx.rotate(contentAngle + (contentAngle > Math.PI / 2 && contentAngle < 3 * Math.PI / 2 ? Math.PI : 0))
       
       ctx.fillStyle = colors.parchment
-      ctx.font = 'bold 11px serif'
+      ctx.font = 'bold 9px serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       
       // Add text shadow for better readability
       ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-      ctx.shadowBlur = 3
+      ctx.shadowBlur = 2
       ctx.shadowOffsetX = 1
       ctx.shadowOffsetY = 1
       
       // Truncate long game names
-      const maxLength = 12
+      const maxLength = 10
       const displayName = game.name.length > maxLength 
         ? game.name.substring(0, maxLength) + '...' 
         : game.name
@@ -220,18 +230,18 @@ export default function GameSpinner({
       ctx.rotate(contentAngle + (contentAngle > Math.PI / 2 && contentAngle < 3 * Math.PI / 2 ? Math.PI : 0))
       
       ctx.fillStyle = colors.parchment
-      ctx.font = 'bold 14px serif'
+      ctx.font = 'bold 11px serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       
       // Add text shadow for better readability
       ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-      ctx.shadowBlur = 3
+      ctx.shadowBlur = 2
       ctx.shadowOffsetX = 1
       ctx.shadowOffsetY = 1
       
       // Truncate long game names
-      const maxLength = 15
+      const maxLength = 12
       const displayName = game.name.length > maxLength 
         ? game.name.substring(0, maxLength) + '...' 
         : game.name
@@ -359,7 +369,11 @@ export default function GameSpinner({
         const selectedGame = games[selectedIndex % games.length]
         
         if (onGameSelected && selectedGame) {
-          onGameSelected(selectedGame)
+          // Handle both sync and async callbacks
+          const result = onGameSelected(selectedGame)
+          if (result instanceof Promise) {
+            result.catch(error => console.warn('Error in game selection callback:', error))
+          }
         }
       }
     }
@@ -369,7 +383,10 @@ export default function GameSpinner({
 
   // Handle touch/click
   const handleInteraction = useCallback((event: React.MouseEvent | React.TouchEvent) => {
-    event.preventDefault()
+    // Only prevent default for touch events to avoid passive listener issues
+    if ('touches' in event) {
+      event.preventDefault()
+    }
     spin()
   }, [spin])
 
@@ -382,7 +399,8 @@ export default function GameSpinner({
         if (game.image && !loadedImages.has(game.image)) {
           try {
             const img = new Image()
-            img.crossOrigin = 'anonymous'
+            // Don't set crossOrigin for external images to avoid CORS issues
+            // img.crossOrigin = 'anonymous'
             
             await new Promise<void>((resolve) => {
               img.onload = () => {
@@ -443,13 +461,6 @@ export default function GameSpinner({
         }}
       />
       
-      {isAnimating && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg font-serif">
-            Spinning...
-          </div>
-        </div>
-      )}
       
       <button
         onClick={spin}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import GameLogModal from '@/components/GameLogModal'
-import { getGameLogs, deleteGameLog, formatDuration, formatPlayersText, formatDatePlayed, getAvailableGames } from '@/lib/game-service'
+import { getGameLogs, deleteGameLog, formatDuration, formatDatePlayed, getAvailableGames } from '@/lib/game-service'
 import type { GameLog, AvailableGame } from '@/types/database'
 
 export default function GameLogsPage() {
@@ -86,7 +86,7 @@ export default function GameLogsPage() {
           {/* Log Game Button */}
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-3 rounded-lg font-bold transition-all duration-200 hover:scale-105"
+            className="px-6 py-3 rounded-lg font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
             style={{
               background: 'linear-gradient(to bottom, #228B22, #006400)',
               color: '#F5F5DC',
@@ -128,7 +128,7 @@ export default function GameLogsPage() {
             </p>
             <button
               onClick={() => setShowModal(true)}
-              className="px-8 py-4 rounded-lg font-bold transition-all duration-200 hover:scale-105"
+              className="px-8 py-4 rounded-lg font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
               style={{
                 background: 'linear-gradient(to bottom, #228B22, #006400)',
                 color: '#F5F5DC',
@@ -174,10 +174,6 @@ export default function GameLogsPage() {
                     {/* Game Details */}
                     <div className="space-y-1 text-sm" style={{ color: '#E6DDD4' }}>
                       <div className="flex items-center gap-2">
-                        <span>👥</span>
-                        <span>Players: {formatPlayersText(log.players)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
                         <span>⏱️</span>
                         <span>{formatDuration(log.duration_minutes)}</span>
                       </div>
@@ -197,7 +193,7 @@ export default function GameLogsPage() {
                   {/* Delete Button */}
                   <button
                     onClick={() => handleDeleteLog(log.id)}
-                    className="ml-4 px-3 py-1 rounded text-sm font-bold transition-all duration-200 hover:scale-105"
+                    className="ml-4 px-3 py-1 rounded text-sm font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
                     style={{
                       background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
                       color: '#F5F5DC',
@@ -225,7 +221,7 @@ export default function GameLogsPage() {
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href="/spinner"
-              className="px-6 py-2 rounded transition-all duration-200 hover:scale-105"
+              className="px-6 py-2 rounded transition-all duration-200 hover:scale-105 cursor-pointer"
               style={{
                 backgroundColor: 'rgba(30, 144, 255, 0.2)',
                 color: '#1E90FF',
@@ -237,7 +233,7 @@ export default function GameLogsPage() {
             </a>
             <a
               href="/search-test"
-              className="px-6 py-2 rounded transition-all duration-200 hover:scale-105"
+              className="px-6 py-2 rounded transition-all duration-200 hover:scale-105 cursor-pointer"
               style={{
                 backgroundColor: 'rgba(34, 139, 34, 0.2)',
                 color: '#228B22',

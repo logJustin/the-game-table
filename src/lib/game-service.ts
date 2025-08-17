@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { AvailableGame, GameLog } from '@/types/database'
+import type { AvailableGame, GameLog, CurrentSelection } from '@/types/database'
 
 export interface AddGameData {
   gameName: string
@@ -32,7 +32,7 @@ export async function addAvailableGame({ gameName, gameImage, bggId }: AddGameDa
     .from('available_games')
     .select('*')
     .eq('game_name', gameName)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     throw new Error(`"${gameName}" is already in the game library`)
@@ -148,4 +148,57 @@ export function formatDatePlayed(dateString: string): string {
   } else {
     return date.toLocaleDateString()
   }
+}
+
+// Current Selection Management
+export async function getCurrentSelection(): Promise<CurrentSelection | null> {
+  const { data, error } = await supabase
+    .from('current_selection')
+    .select('*')
+    .eq('id', 1)
+    .single()
+
+  if (error) {
+    // If table doesn't exist yet (migration not run), silently return null
+    if (error.code === 'PGRST116' || error.message?.includes('relation "current_selection" does not exist')) {
+      console.warn('current_selection table not found - please run the database migration')
+      return null
+    }
+    console.error('Error fetching current selection:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function setCurrentSelection(game: {
+  id: string
+  name: string
+  image?: string
+  bggId?: string
+} | null): Promise<void> {
+  const { error } = await supabase
+    .from('current_selection')
+    .update({
+      selected_game_id: game?.id || null,
+      selected_game_name: game?.name || null,
+      selected_game_image: game?.image || null,
+      selected_game_bgg_id: game?.bggId || null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', 1)
+
+  if (error) {
+    // If table doesn't exist yet (migration not run), silently fail
+    if (error.code === 'PGRST116' || error.message?.includes('relation "current_selection" does not exist')) {
+      console.warn('current_selection table not found - please run the database migration')
+      return
+    }
+    console.error('Error setting current selection:', error)
+    throw error
+  }
+}
+
+export async function clearCurrentSelection(): Promise<void> {
+  await setCurrentSelection(null)
 }

@@ -19,8 +19,8 @@ interface NavGroup {
 }
 
 const mainNavItems: NavItem[] = [
-  { href: '/logs', label: 'Game Logs', icon: '📋' },
   { href: '/spinner', label: 'Game Spinner', icon: '🎯' },
+  { href: '/logs', label: 'Game Logs', icon: '📋' },
   { href: '/search-test', label: 'Game Library', icon: '🔍' }
 ]
 
@@ -60,7 +60,7 @@ export default function Navigation() {
       {/* Mobile Menu Button - Fixed top-left */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 p-3 rounded-lg transition-all duration-200 md:hidden"
+        className="fixed top-4 left-4 z-50 p-3 rounded-lg transition-all duration-200 md:hidden cursor-pointer"
         style={{
           backgroundColor: 'rgba(92, 64, 51, 0.9)',
           border: '1px solid #5C4033',
@@ -138,7 +138,7 @@ export default function Navigation() {
             <>
               <button
                 onClick={() => setIsTestGroupExpanded(!isTestGroupExpanded)}
-                className={`w-full flex items-center gap-3 px-6 py-3 transition-all duration-200 hover:translate-x-1 ${
+                className={`w-full flex items-center gap-3 px-6 py-3 transition-all duration-200 hover:translate-x-1 cursor-pointer ${
                   isInTestGroup ? 'border-r-2' : ''
                 }`}
                 style={{
@@ -232,11 +232,11 @@ export default function Navigation() {
                 <span className="text-xl">{item.icon}</span>
                 <div className="flex-1">
                   <div className="font-medium">{item.label}</div>
-                  {item.href === '/logs' && (
-                    <div className="text-xs opacity-75">Game History & Winners</div>
-                  )}
                   {item.href === '/spinner' && (
-                    <div className="text-xs opacity-75">Interactive Game Wheel</div>
+                    <div className="text-xs opacity-75">Collaborative Game Selection</div>
+                  )}
+                  {item.href === '/logs' && (
+                    <div className="text-xs opacity-75">Game History & Quick Logging</div>
                   )}
                   {item.href === '/search-test' && (
                     <div className="text-xs opacity-75">Browse & Search Games</div>
@@ -254,7 +254,7 @@ export default function Navigation() {
             <>
               <button
                 onClick={() => setIsTestGroupExpanded(!isTestGroupExpanded)}
-                className={`w-full flex items-center gap-4 px-6 py-4 transition-all duration-200 ${
+                className={`w-full flex items-center gap-4 px-6 py-4 transition-all duration-200 cursor-pointer ${
                   isInTestGroup ? 'border-r-2' : ''
                 }`}
                 style={{
@@ -307,9 +307,9 @@ export default function Navigation() {
 
         <div className="p-6 border-t" style={{ borderColor: '#5C4033' }}>
           <div className="text-xs" style={{ color: '#E6DDD4' }}>
-            📋 View game logs and winners
+            🎯 Collaborate to pick games & quick log results
             <br />
-            🎯 Spin the wheel to choose games
+            📋 View game history and winners
             <br />
             🔍 Browse the game library
             {isDevelopment && (

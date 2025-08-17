@@ -7,8 +7,8 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to logs page as the new landing page
-    router.replace('/logs')
+    // Redirect to spinner page as the primary entry point for collaborative game selection
+    router.replace('/spinner')
   }, [router])
 
   return (
@@ -24,7 +24,7 @@ export default function Home() {
     }}>
       <div className="text-center">
         <div className="text-4xl mb-4">🎲</div>
-        <div style={{ color: '#F5F5DC' }}>Redirecting to Game Logs...</div>
+        <div style={{ color: '#F5F5DC' }}>Redirecting to Game Spinner...</div>
       </div>
     </div>
   )
