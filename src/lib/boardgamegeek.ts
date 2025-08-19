@@ -64,7 +64,7 @@ async function fetchWithCORSFallback(url: string, options: RequestInit = {}): Pr
   throw new Error(`All CORS proxies failed: ${errors.join('; ')}`)
 }
 
-// Comprehensive board games database (text-only for reliable rendering)
+// Comprehensive board games database - images loaded dynamically via BGG API
 export const POPULAR_GAMES: BoardGame[] = [
   { 
     id: '13', 
@@ -598,4 +598,50 @@ export function createCustomGame(name: string): BoardGame {
   console.log(`Created custom game: "${customGame.name}" with ID: ${customGame.id}`)
   
   return customGame
+}
+
+// Load images for popular games dynamically while maintaining order
+export async function loadPopularGameImages(
+  games: BoardGame[], 
+  onUpdate?: (updatedGames: BoardGame[]) => void
+): Promise<BoardGame[]> {
+  // Create a results array to maintain order
+  const results = [...games]
+  
+  // Process each game sequentially to maintain order
+  for (let i = 0; i < games.length; i++) {
+    const game = games[i]
+    
+    // Skip if already has image
+    if (game.image) {
+      continue
+    }
+    
+    // Add delay to stagger requests (prevent overwhelming BGG API)
+    if (i > 0) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+    }
+    
+    try {
+      const details = await getBGGGameDetails(game.id)
+      if (details?.thumbnail) {
+        // Update the specific game in the results array
+        results[i] = {
+          ...game,
+          thumbnail: details.thumbnail,
+          image: details.image
+        }
+        
+        // Call update callback if provided (for progressive updates)
+        if (onUpdate) {
+          onUpdate([...results])
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to load image for ${game.name}:`, error)
+    }
+  }
+  
+  console.log(`Loaded images for ${results.filter(g => g.image).length}/${games.length} popular games`)
+  return results
 }

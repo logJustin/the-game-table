@@ -25,7 +25,6 @@ export default function GameSpinner({
   const animationRef = useRef<number | undefined>(undefined)
   const [rotation, setRotation] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
-  const [loadedImages, setLoadedImages] = useState<Map<string, HTMLImageElement>>(new Map())
 
   // Canvas dimensions
   const CANVAS_SIZE = 400
@@ -150,105 +149,66 @@ export default function GameSpinner({
     ctx.lineWidth = 1
     ctx.stroke()
 
-    // Calculate position for content (image or text)
+    // Calculate position for text content
     const contentAngle = (startAngle + endAngle) / 2
-    const imageRadius = WHEEL_RADIUS * 0.6
-    const textRadius = WHEEL_RADIUS * 0.7
-    const imageX = centerX + Math.cos(contentAngle) * imageRadius
-    const imageY = centerY + Math.sin(contentAngle) * imageRadius
+    const textRadius = WHEEL_RADIUS * 0.6  // Optimal position for text readability
     const textX = centerX + Math.cos(contentAngle) * textRadius
     const textY = centerY + Math.sin(contentAngle) * textRadius
 
-    // Try to draw game image
-    const gameImage = game.image ? loadedImages.get(game.image) : null
+    // Text-only rendering with smart wrapping
+    ctx.save()
+    ctx.translate(textX, textY)
+    ctx.rotate(contentAngle + (contentAngle > Math.PI / 2 && contentAngle < 3 * Math.PI / 2 ? Math.PI : 0))
     
-    if (gameImage) {
-      ctx.save()
+    ctx.fillStyle = colors.parchment
+    ctx.font = 'bold 14px serif'  // Larger font for better readability
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    
+    // Add text shadow for better readability
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+    ctx.shadowBlur = 3
+    ctx.shadowOffsetX = 1
+    ctx.shadowOffsetY = 1
+    
+    // Smart text wrapping and display
+    const words = game.name.split(' ')
+    const maxLineLength = 20  // Increased character limit for single line
+    
+    if (game.name.length <= maxLineLength) {
+      // Single line if it fits
+      ctx.fillText(game.name, 0, 0)
+    } else if (words.length > 1) {
+      // Try to wrap on word boundaries
+      let line1 = ''
+      let line2 = ''
       
-      try {
-        // Create clipping path for the image area
-        const imageSize = 60
-        ctx.beginPath()
-        ctx.arc(imageX, imageY, imageSize / 2, 0, 2 * Math.PI)
-        ctx.clip()
-        
-        // Draw image
-        ctx.drawImage(
-          gameImage, 
-          imageX - imageSize / 2, 
-          imageY - imageSize / 2, 
-          imageSize, 
-          imageSize
-        )
-        
-        ctx.restore()
-      } catch (error) {
-        // If drawing fails (e.g., tainted canvas), just restore and continue
-        ctx.restore()
-        console.warn(`Failed to draw image for ${game.name}:`, error)
+      for (const word of words) {
+        if (line1.length === 0) {
+          line1 = word
+        } else if ((line1 + ' ' + word).length <= maxLineLength) {
+          line1 += ' ' + word
+        } else {
+          line2 = words.slice(words.indexOf(word)).join(' ')
+          break
+        }
       }
       
-      // Draw image border
-      try {
-        ctx.beginPath()
-        ctx.arc(imageX, imageY, 60 / 2, 0, 2 * Math.PI)
-        ctx.strokeStyle = colors.brassGold
-        ctx.lineWidth = 2
-        ctx.stroke()
-      } catch (error) {
-        console.warn(`Failed to draw border for ${game.name}:`, error)
+      // Truncate second line if too long
+      if (line2.length > maxLineLength) {
+        line2 = line2.substring(0, maxLineLength - 3) + '...'
       }
       
-      // Draw game name below image
-      ctx.save()
-      ctx.translate(textX, textY)
-      ctx.rotate(contentAngle + (contentAngle > Math.PI / 2 && contentAngle < 3 * Math.PI / 2 ? Math.PI : 0))
-      
-      ctx.fillStyle = colors.parchment
-      ctx.font = 'bold 9px serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      
-      // Add text shadow for better readability
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-      ctx.shadowBlur = 2
-      ctx.shadowOffsetX = 1
-      ctx.shadowOffsetY = 1
-      
-      // Truncate long game names
-      const maxLength = 10
-      const displayName = game.name.length > maxLength 
-        ? game.name.substring(0, maxLength) + '...' 
-        : game.name
-      
-      ctx.fillText(displayName, 0, 0)
-      ctx.restore()
+      // Draw two lines with proper spacing
+      ctx.fillText(line1, 0, -9)
+      ctx.fillText(line2, 0, 9)
     } else {
-      // Fallback: draw text only (original behavior)
-      ctx.save()
-      ctx.translate(textX, textY)
-      ctx.rotate(contentAngle + (contentAngle > Math.PI / 2 && contentAngle < 3 * Math.PI / 2 ? Math.PI : 0))
-      
-      ctx.fillStyle = colors.parchment
-      ctx.font = 'bold 11px serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      
-      // Add text shadow for better readability
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-      ctx.shadowBlur = 2
-      ctx.shadowOffsetX = 1
-      ctx.shadowOffsetY = 1
-      
-      // Truncate long game names
-      const maxLength = 12
-      const displayName = game.name.length > maxLength 
-        ? game.name.substring(0, maxLength) + '...' 
-        : game.name
-      
+      // Single long word - truncate with ellipsis
+      const displayName = game.name.substring(0, maxLineLength - 3) + '...'
       ctx.fillText(displayName, 0, 0)
-      ctx.restore()
     }
+    
+    ctx.restore()
   }
 
   const drawBrassRim = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number) => {
@@ -265,13 +225,6 @@ export default function GameSpinner({
     
     ctx.fillStyle = gradient
     ctx.fill()
-
-    // Add metallic shine effect
-    ctx.beginPath()
-    ctx.arc(centerX - 20, centerY - 20, WHEEL_RADIUS + RIM_WIDTH - 2, 0, Math.PI / 3)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
-    ctx.lineWidth = 3
-    ctx.stroke()
   }
 
   const drawCenterHub = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number) => {
@@ -295,37 +248,35 @@ export default function GameSpinner({
   }
 
   const drawPointer = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number) => {
-    const pointerLength = 40
-    const pointerWidth = 20
+    const pointerLength = 60  // Made longer for better visibility
+    const pointerWidth = 30   // Made wider for prominence
+    const pointerTipLength = 35  // Length of the pointed tip
 
     ctx.save()
-    ctx.translate(centerX, centerY - WHEEL_RADIUS - 10)
+    // Position at right side of wheel (90 degrees), pointing left into segments
+    ctx.translate(centerX + WHEEL_RADIUS + 5, centerY)
+    ctx.rotate(Math.PI / 2)  // Rotate 90 degrees to point left
 
-    // Pointer shadow
-    ctx.beginPath()
-    ctx.moveTo(2, 2)
-    ctx.lineTo(pointerWidth / 2 + 2, -pointerLength + 2)
-    ctx.lineTo(-pointerWidth / 2 + 2, -pointerLength + 2)
-    ctx.closePath()
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-    ctx.fill()
-
-    // Main pointer
+    // Main pointer body with clean shape
     ctx.beginPath()
     ctx.moveTo(0, 0)
-    ctx.lineTo(pointerWidth / 2, -pointerLength)
-    ctx.lineTo(-pointerWidth / 2, -pointerLength)
+    ctx.lineTo(pointerWidth / 2, pointerLength - pointerTipLength)
+    ctx.lineTo(8, pointerLength - pointerTipLength)  // Create narrower tip
+    ctx.lineTo(0, pointerLength)  // Sharp point
+    ctx.lineTo(-8, pointerLength - pointerTipLength)
+    ctx.lineTo(-pointerWidth / 2, pointerLength - pointerTipLength)
     ctx.closePath()
     
-    const gradient = ctx.createLinearGradient(0, 0, 0, -pointerLength)
-    gradient.addColorStop(0, colors.brassDark)
+    // Clean gold gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, pointerLength)
+    gradient.addColorStop(0, '#FFD700')  // Bright gold at base
     gradient.addColorStop(0.5, colors.brassGold)
-    gradient.addColorStop(1, '#DAA520')
+    gradient.addColorStop(1, colors.brassDark)  // Darker gold at tip
     
     ctx.fillStyle = gradient
     ctx.fill()
 
-    // Pointer outline
+    // Clean outline for definition
     ctx.strokeStyle = colors.brassDark
     ctx.lineWidth = 2
     ctx.stroke()
@@ -390,47 +341,10 @@ export default function GameSpinner({
     spin()
   }, [spin])
 
-  // Load images when games change
-  useEffect(() => {
-    const loadImages = async () => {
-      const newLoadedImages = new Map<string, HTMLImageElement>()
-      
-      for (const game of games) {
-        if (game.image && !loadedImages.has(game.image)) {
-          try {
-            const img = new Image()
-            // Don't set crossOrigin for external images to avoid CORS issues
-            // img.crossOrigin = 'anonymous'
-            
-            await new Promise<void>((resolve) => {
-              img.onload = () => {
-                newLoadedImages.set(game.image!, img)
-                resolve()
-              }
-              img.onerror = () => {
-                console.warn(`Failed to load image for ${game.name}:`, game.image)
-                resolve() // Don't reject, just skip this image
-              }
-              img.src = game.image!
-            })
-          } catch (error) {
-            console.warn(`Error loading image for ${game.name}:`, error)
-          }
-        }
-      }
-      
-      if (newLoadedImages.size > 0) {
-        setLoadedImages(prev => new Map([...prev, ...newLoadedImages]))
-      }
-    }
-
-    loadImages()
-  }, [games, loadedImages])
-
   // Draw wheel whenever dependencies change
   useEffect(() => {
     drawWheel()
-  }, [drawWheel, loadedImages])
+  }, [drawWheel])
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -442,7 +356,7 @@ export default function GameSpinner({
   }, [])
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center">
+    <div className="w-full flex flex-col items-center justify-center gap-6">
       <canvas
         ref={canvasRef}
         width={CANVAS_SIZE}
@@ -461,12 +375,11 @@ export default function GameSpinner({
         }}
       />
       
-      
       <button
         onClick={spin}
         disabled={disabled || isAnimating || games.length === 0}
         className={`
-          absolute bottom-0 px-4 py-1 rounded-lg font-serif font-bold text-sm
+          px-6 py-3 rounded-lg font-serif font-bold text-base
           transition-all duration-200 transform
           ${disabled || isAnimating || games.length === 0
             ? 'bg-gray-400 text-gray-600 cursor-not-allowed'

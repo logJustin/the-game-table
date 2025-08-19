@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { logGame } from '@/lib/game-service'
+import { colors, getBackgroundColor, getBorderColor, getTextColor, getButtonColors } from '@/styles/colors'
 
 interface AvailableGame {
   id: string
@@ -26,6 +27,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isCustomMode, setIsCustomMode] = useState(false)
 
   const resetForm = () => {
     setGameName(selectedGameName)
@@ -33,6 +35,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
     setDuration('')
     setNotes('')
     setError(null)
+    setIsCustomMode(false)
   }
 
   // Update game name when selectedGameName changes
@@ -91,20 +94,20 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
       <div 
         className="w-full max-w-md rounded-lg shadow-xl"
         style={{
-          backgroundColor: '#2C1810',
-          border: '2px solid #5C4033',
-          maxHeight: '90vh',
+          backgroundColor: getBackgroundColor(),
+          border: `2px solid ${getBorderColor()}`,
+          maxHeight: '95vh',
           overflowY: 'auto'
         }}
       >
         {/* Header */}
-        <div className="p-6 border-b" style={{ borderColor: '#5C4033' }}>
+        <div className="p-4 sm:p-6 border-b" style={{ borderColor: '#5C4033' }}>
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold" style={{ 
+            <h2 className="text-lg sm:text-xl font-bold" style={{ 
               fontFamily: 'serif',
               color: '#F5F5DC' 
             }}>
@@ -124,7 +127,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           {/* Error Display */}
           {error && (
             <div className="p-3 rounded text-sm" style={{
@@ -143,8 +146,16 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
             </label>
             {availableGames.length > 0 ? (
               <select
-                value={gameName}
-                onChange={(e) => setGameName(e.target.value)}
+                value={isCustomMode ? "__custom__" : gameName}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setIsCustomMode(true)
+                    setGameName('')
+                  } else {
+                    setIsCustomMode(false)
+                    setGameName(e.target.value)
+                  }
+                }}
                 required
                 className="w-full p-3 rounded border cursor-pointer"
                 style={{
@@ -187,10 +198,10 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
             )}
             
             {/* Custom game name input (shown when "custom" is selected) */}
-            {gameName === '__custom__' && (
+            {isCustomMode && (
               <input
                 type="text"
-                value=""
+                value={gameName}
                 onChange={(e) => setGameName(e.target.value)}
                 placeholder="Enter custom game name..."
                 required
@@ -214,7 +225,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
               {['Holly', 'Tori', 'Nash', 'Justin'].map((player) => (
                 <label
                   key={player}
-                  className="flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors duration-200"
+                  className="flex items-center gap-3 p-4 rounded border cursor-pointer transition-colors duration-200"
                   style={{
                     backgroundColor: winner === player ? 'rgba(184, 134, 11, 0.2)' : 'rgba(245, 245, 220, 0.1)',
                     border: winner === player ? '2px solid #B8860B' : '1px solid #5C4033',
@@ -290,12 +301,12 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1 py-3 px-4 rounded font-medium transition-all duration-200 disabled:opacity-50 cursor-pointer"
+              className="w-full py-4 px-4 rounded font-medium transition-all duration-200 disabled:opacity-50 cursor-pointer"
               style={{
                 backgroundColor: 'rgba(108, 117, 125, 0.2)',
                 border: '1px solid #6C757D',
@@ -307,7 +318,7 @@ export default function GameLogModal({ isOpen, onClose, onSuccess, availableGame
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 px-4 rounded font-bold transition-all duration-200 disabled:opacity-50 cursor-pointer"
+              className="w-full py-4 px-4 rounded font-bold transition-all duration-200 disabled:opacity-50 cursor-pointer"
               style={{
                 background: loading 
                   ? 'linear-gradient(to bottom, #6C757D, #495057)'

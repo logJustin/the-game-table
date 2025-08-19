@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { searchBoardGames, searchBoardGamesExternal, createBoardGameFromSearch, getPopularGames, loadSearchResultImages, createCustomGame, type BGGSearchResult, type BoardGame } from '@/lib/boardgamegeek'
+import { searchBoardGames, searchBoardGamesExternal, createBoardGameFromSearch, getPopularGames, loadSearchResultImages, loadPopularGameImages, createCustomGame, type BGGSearchResult, type BoardGame } from '@/lib/boardgamegeek'
 
 interface BoardGameSearchProps {
   onGameSelected: (game: BoardGame & { addedBy: string }) => void
@@ -18,6 +18,7 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
   const [hasTriedExternal, setHasTriedExternal] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [popularGames, setPopularGames] = useState<BoardGame[]>([])
+  const [popularGamesLoading, setPopularGamesLoading] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -41,11 +42,33 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
 
   // Load popular games on mount and filter out already added ones
   useEffect(() => {
-    const allPopularGames = getPopularGames(12) // Get more to account for filtering
-    const filteredPopularGames = allPopularGames.filter(game => 
-      !isGameAlreadyAdded(game.id, game.name, game.id)
-    ).slice(0, 8) // Take first 8 after filtering
-    setPopularGames(filteredPopularGames)
+    async function loadPopularGames() {
+      const allPopularGames = getPopularGames(12) // Get more to account for filtering
+      const filteredPopularGames = allPopularGames.filter(game => 
+        !isGameAlreadyAdded(game.id, game.name, game.id)
+      ).slice(0, 8) // Take first 8 after filtering
+      
+      setPopularGames(filteredPopularGames)
+      setPopularGamesLoading(true)
+      
+      // Load images for popular games in the background
+      try {
+        await loadPopularGameImages(
+          filteredPopularGames,
+          (updatedGames) => {
+            // Progressive update callback - maintains order
+            setPopularGames(updatedGames)
+          }
+        )
+      } catch (error) {
+        console.warn('Failed to load popular game images:', error)
+        // Keep the games without images if image loading fails
+      } finally {
+        setPopularGamesLoading(false)
+      }
+    }
+    
+    loadPopularGames()
   }, [excludeGames])
 
   // Handle search with debouncing and external fallback
@@ -222,7 +245,7 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
         onChange={handleInputChange}
         onFocus={handleInputFocus}
         placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-lg border-2 text-lg"
+        className="w-full px-4 py-4 rounded-lg border-2 text-base sm:text-lg"
         style={{
           backgroundColor: '#F5F5DC',
           borderColor: '#B8860B',
@@ -298,10 +321,10 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                       />
                     ) : (
                       <div 
-                        className="w-full h-full rounded animate-pulse flex items-center justify-center text-xs"
+                        className="w-full h-full rounded flex items-center justify-center text-lg"
                         style={{ 
-                          backgroundColor: 'rgba(184, 134, 11, 0.1)',
-                          color: 'rgba(184, 134, 11, 0.5)'
+                          backgroundColor: 'rgba(184, 134, 11, 0.15)',
+                          color: 'rgba(184, 134, 11, 0.8)'
                         }}
                       >
                         🎲
@@ -316,6 +339,12 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                     {result.thumbnail && (
                       <div className="text-xs opacity-60 mt-1">📸 BGG Image</div>
                     )}
+                  </div>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ 
+                    backgroundColor: '#B8860B',
+                    color: '#2F1B14'
+                  }}>
+                    <span className="text-lg font-bold">+</span>
                   </div>
                 </button>
               ))}
@@ -366,7 +395,10 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                 backgroundColor: 'rgba(184, 134, 11, 0.1)'
               }}>
                 Popular Games - Click to Add
-                {excludeGames.length > 0 && (
+                {popularGamesLoading && (
+                  <span className="font-normal opacity-75 ml-2">(loading images...)</span>
+                )}
+                {!popularGamesLoading && excludeGames.length > 0 && (
                   <span className="font-normal opacity-75 ml-2">(filtered)</span>
                 )}
               </div>
@@ -399,10 +431,10 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                         />
                       ) : (
                         <div 
-                          className="w-full h-full rounded animate-pulse flex items-center justify-center text-xs"
+                          className="w-full h-full rounded flex items-center justify-center text-lg"
                           style={{ 
-                            backgroundColor: 'rgba(184, 134, 11, 0.1)',
-                            color: 'rgba(184, 134, 11, 0.5)'
+                            backgroundColor: 'rgba(184, 134, 11, 0.15)',
+                            color: 'rgba(184, 134, 11, 0.8)'
                           }}
                         >
                           🎲
@@ -423,6 +455,12 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                           {game.playingTime && ` • ${game.playingTime} min`}
                         </div>
                       )}
+                    </div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ 
+                      backgroundColor: '#B8860B',
+                      color: '#2F1B14'
+                    }}>
+                      <span className="text-lg font-bold">+</span>
                     </div>
                   </button>
                 ))}

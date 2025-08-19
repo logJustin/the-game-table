@@ -51,7 +51,7 @@ export default function GameLogsPage() {
   }
 
   return (
-    <div className="min-h-screen p-4" style={{ 
+    <div className="min-h-screen p-3 sm:p-4" style={{ 
       backgroundColor: '#2C1810',
       backgroundImage: `
         linear-gradient(45deg, rgba(74, 52, 41, 0.1) 25%, transparent 25%),
@@ -64,16 +64,16 @@ export default function GameLogsPage() {
     }}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2" style={{ 
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8 gap-4">
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ 
               fontFamily: 'serif',
               color: '#F5F5DC',
               textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)'
             }}>
               Game Logs
             </h1>
-            <p className="text-lg" style={{ color: '#E6DDD4' }}>
+            <p className="text-base sm:text-lg" style={{ color: '#E6DDD4' }}>
               Track Your Gaming History & Champions
             </p>
             {logs.length > 0 && (
@@ -86,7 +86,7 @@ export default function GameLogsPage() {
           {/* Log Game Button */}
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-3 rounded-lg font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-4 sm:py-3 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-105 cursor-pointer flex-shrink-0"
             style={{
               background: 'linear-gradient(to bottom, #228B22, #006400)',
               color: '#F5F5DC',
@@ -143,66 +143,116 @@ export default function GameLogsPage() {
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="p-6 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+                className="rounded-xl transition-all duration-200 hover:scale-[1.02] overflow-hidden"
                 style={{
-                  backgroundColor: 'rgba(92, 64, 51, 0.3)',
+                  backgroundColor: 'rgba(92, 64, 51, 0.4)',
                   border: '1px solid #5C4033',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
                 }}
               >
-                {/* Winner Prominence */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold" style={{ 
-                        fontFamily: 'serif',
-                        color: '#F5F5DC' 
-                      }}>
-                        {log.game_name}
-                      </h3>
-                      <div 
-                        className="px-3 py-1 rounded-full text-sm font-bold"
-                        style={{
-                          background: 'linear-gradient(to right, #FFD700, #FFA500)',
-                          color: '#2C1810'
-                        }}
-                      >
-                        🏆 {log.winner} WON!
-                      </div>
-                    </div>
-                    
-                    {/* Game Details */}
-                    <div className="space-y-1 text-sm" style={{ color: '#E6DDD4' }}>
-                      <div className="flex items-center gap-2">
-                        <span>⏱️</span>
-                        <span>{formatDuration(log.duration_minutes)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span>📅</span>
-                        <span>{formatDatePlayed(log.played_at)}</span>
-                      </div>
-                      {log.notes && (
-                        <div className="flex items-start gap-2 mt-2">
-                          <span>📝</span>
-                          <span className="italic">{log.notes}</span>
-                        </div>
-                      )}
+                {/* Card Header */}
+                <div className="px-4 py-4 border-b" style={{ 
+                  backgroundColor: 'rgba(44, 24, 16, 0.6)',
+                  borderColor: '#5C4033'
+                }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold truncate pr-2" style={{ 
+                      fontFamily: 'serif',
+                      color: '#F5F5DC' 
+                    }}>
+                      {log.game_name}
+                    </h3>
+                    <button
+                      onClick={() => handleDeleteLog(log.id)}
+                      className="w-9 h-9 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer flex-shrink-0 flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
+                        color: '#F5F5DC',
+                        boxShadow: '0 2px 8px rgba(139, 21, 56, 0.4)'
+                      }}
+                      title="Delete this game log"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card Body - Mobile-First Vertical Layout */}
+                <div className="p-6 space-y-6">
+                  {/* Winner Section - Most Prominent */}
+                  <div className="text-center">
+                    <div 
+                      className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl text-xl font-bold shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
+                        color: '#2C1810',
+                        boxShadow: '0 6px 20px rgba(255, 215, 0, 0.4)'
+                      }}
+                    >
+                      <span className="text-2xl">🏆</span>
+                      <span>{log.winner} WON!</span>
                     </div>
                   </div>
 
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => handleDeleteLog(log.id)}
-                    className="ml-4 px-3 py-1 rounded text-sm font-bold transition-all duration-200 hover:scale-105 cursor-pointer"
-                    style={{
-                      background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
-                      color: '#F5F5DC',
-                      boxShadow: '0 2px 4px rgba(139, 21, 56, 0.3)'
-                    }}
-                    title="Delete this game log"
-                  >
-                    🗑️
-                  </button>
+                  {/* Stats Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Date Card */}
+                    <div 
+                      className="p-4 rounded-xl text-center"
+                      style={{
+                        background: 'rgba(184, 134, 11, 0.15)',
+                        border: '1px solid rgba(184, 134, 11, 0.3)',
+                      }}
+                    >
+                      <div className="text-2xl mb-2">📅</div>
+                      <div className="text-sm font-medium" style={{ color: '#B8860B' }}>
+                        WIN DATE
+                      </div>
+                      <div className="text-base font-bold" style={{ color: '#F5F5DC' }}>
+                        {formatDatePlayed(log.played_at)}
+                      </div>
+                    </div>
+
+                    {/* Duration Card */}
+                    <div 
+                      className="p-4 rounded-xl text-center"
+                      style={{
+                        background: 'rgba(92, 64, 51, 0.3)',
+                        border: '1px solid rgba(92, 64, 51, 0.5)',
+                      }}
+                    >
+                      <div className="text-2xl mb-2">⏱️</div>
+                      <div className="text-sm font-medium" style={{ color: '#B8860B' }}>
+                        DURATION
+                      </div>
+                      <div className="text-base font-bold" style={{ color: '#F5F5DC' }}>
+                        {formatDuration(log.duration_minutes)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes Section */}
+                  {log.notes && (
+                    <div 
+                      className="p-4 rounded-xl"
+                      style={{
+                        background: 'rgba(245, 245, 220, 0.05)',
+                        border: '1px solid rgba(245, 245, 220, 0.1)',
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl flex-shrink-0">📝</span>
+                        <div>
+                          <div className="text-sm font-medium mb-1" style={{ color: '#B8860B' }}>
+                            NOTES
+                          </div>
+                          <div className="text-sm italic leading-relaxed" style={{ color: '#E6DDD4' }}>
+                            {log.notes}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -210,18 +260,18 @@ export default function GameLogsPage() {
         )}
 
         {/* Quick Actions */}
-        <div className="mt-8 p-6 rounded-lg text-center" style={{
+        <div className="mt-8 p-4 sm:p-6 rounded-lg text-center" style={{
           backgroundColor: 'rgba(44, 24, 16, 0.5)',
           border: '1px solid #4A3429',
           color: '#E6DDD4'
         }}>
-          <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'serif' }}>
+          <h3 className="text-lg font-bold mb-4" style={{ fontFamily: 'serif' }}>
             Quick Actions
           </h3>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <a
               href="/spinner"
-              className="px-6 py-2 rounded transition-all duration-200 hover:scale-105 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3 rounded transition-all duration-200 hover:scale-105 cursor-pointer"
               style={{
                 backgroundColor: 'rgba(30, 144, 255, 0.2)',
                 color: '#1E90FF',
@@ -230,18 +280,6 @@ export default function GameLogsPage() {
               }}
             >
               🎯 Spin for Next Game
-            </a>
-            <a
-              href="/search-test"
-              className="px-6 py-2 rounded transition-all duration-200 hover:scale-105 cursor-pointer"
-              style={{
-                backgroundColor: 'rgba(34, 139, 34, 0.2)',
-                color: '#228B22',
-                textDecoration: 'none',
-                border: '1px solid #228B22'
-              }}
-            >
-              🔍 Browse Game Library
             </a>
           </div>
         </div>

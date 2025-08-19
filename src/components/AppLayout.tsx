@@ -14,7 +14,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       
       {/* Main content with proper spacing */}
       <main className="md:pl-64">
-        <div className="pt-16 md:pt-0">
+        <div className="pt-0 md:pt-0">
           {children}
         </div>
       </main>

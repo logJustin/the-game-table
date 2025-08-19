@@ -20,8 +20,7 @@ interface NavGroup {
 
 const mainNavItems: NavItem[] = [
   { href: '/spinner', label: 'Game Spinner', icon: '🎯' },
-  { href: '/logs', label: 'Game Logs', icon: '📋' },
-  { href: '/search-test', label: 'Game Library', icon: '🔍' }
+  { href: '/logs', label: 'Game Logs', icon: '📋' }
 ]
 
 const testNavGroup: NavGroup = {
@@ -238,9 +237,6 @@ export default function Navigation() {
                   {item.href === '/logs' && (
                     <div className="text-xs opacity-75">Game History & Quick Logging</div>
                   )}
-                  {item.href === '/search-test' && (
-                    <div className="text-xs opacity-75">Browse & Search Games</div>
-                  )}
                 </div>
                 {isActive && (
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#DAA520' }} />
@@ -310,8 +306,6 @@ export default function Navigation() {
             🎯 Collaborate to pick games & quick log results
             <br />
             📋 View game history and winners
-            <br />
-            🔍 Browse the game library
             {isDevelopment && (
               <>
                 <br />

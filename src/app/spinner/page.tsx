@@ -7,6 +7,7 @@ import GameLogModal from '@/components/GameLogModal'
 import { type BoardGame } from '@/lib/boardgamegeek'
 import { getAvailableGames, addAvailableGame, removeAvailableGame, getCurrentSelection, setCurrentSelection, clearCurrentSelection } from '@/lib/game-service'
 import type { AvailableGame } from '@/types/database'
+import { colors, getBackgroundColor, getBorderColor, getTextColor, getButtonColors } from '@/styles/colors'
 
 interface SpinnerGame {
   id: string
@@ -154,18 +155,20 @@ export default function GameSpinnerPage() {
   }
 
   const startNewGame = async () => {
-    // Clear selected game and all games from spinner
+    // Immediately clear selected game from UI and persistence
     setSelectedGame(null)
+    
+    // Clear from database/localStorage immediately
     try {
       await clearCurrentSelection()
     } catch (error) {
       console.warn('Failed to clear selected game from database:', error)
-      // Fallback to localStorage
-      try {
-        localStorage.removeItem('gameTableSelectedGame')
-      } catch (localError) {
-        console.warn('Failed to clear selected game from localStorage:', localError)
-      }
+    }
+    
+    try {
+      localStorage.removeItem('gameTableSelectedGame')
+    } catch (localError) {
+      console.warn('Failed to clear selected game from localStorage:', localError)
     }
     
     // Clear all games from spinner
@@ -191,8 +194,8 @@ export default function GameSpinnerPage() {
   }))
 
   return (
-    <div className="min-h-screen p-4" style={{ 
-      backgroundColor: '#2C1810',
+    <div className="min-h-screen p-3 sm:p-4" style={{ 
+      backgroundColor: colors.wood.dark,
       backgroundImage: `
         linear-gradient(45deg, rgba(74, 52, 41, 0.1) 25%, transparent 25%),
         linear-gradient(-45deg, rgba(74, 52, 41, 0.1) 25%, transparent 25%),
@@ -204,15 +207,15 @@ export default function GameSpinnerPage() {
     }}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ 
+        <div className="text-center my-8 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ 
             fontFamily: 'serif',
-            color: '#F5F5DC',
+            color: getTextColor('primary'),
             textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)'
           }}>
             Game Spinner
           </h1>
-          <p className="text-lg" style={{ color: '#E6DDD4' }}>
+          <p className="text-base sm:text-lg" style={{ color: getTextColor('secondary') }}>
             Spin the Wheel of Fate to Choose Your Adventure
           </p>
         </div>
@@ -220,9 +223,9 @@ export default function GameSpinnerPage() {
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 rounded-lg text-center" style={{
-            backgroundColor: 'rgba(220, 53, 69, 0.2)',
-            border: '2px solid #DC3545',
-            color: '#F8D7DA'
+            backgroundColor: colors.error.background,
+            border: `2px solid ${colors.error.primary}`,
+            color: colors.error.text
           }}>
             {error}
           </div>
@@ -231,17 +234,16 @@ export default function GameSpinnerPage() {
         {/* Selected Game Display */}
         {selectedGame && (
           <div className="mb-8 p-6 rounded-lg text-center relative" style={{
-            backgroundColor: 'rgba(184, 134, 11, 0.2)',
-            border: '2px solid #B8860B',
-            color: '#F5F5DC'
+            backgroundColor: `rgba(184, 134, 11, 0.2)`,
+            border: `2px solid ${colors.brass.gold}`,
+            color: getTextColor('primary')
           }}>
             {/* Close Button */}
             <button
               onClick={() => clearSelectedGame()}
               className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer"
               style={{
-                background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
-                color: '#F5F5DC',
+                ...getButtonColors('danger'),
                 fontSize: '16px'
               }}
               title="Clear selected game"
@@ -255,14 +257,13 @@ export default function GameSpinnerPage() {
             <p className="text-xl font-bold mb-1">{selectedGame.name}</p>
             <p className="text-sm opacity-75 mb-4">Ready to play! Come back here after your game to log the results.</p>
             
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col gap-3 justify-center">
               {/* Log Results - Primary Action */}
               <button
                 onClick={() => setShowLogModal(true)}
-                className="px-6 py-3 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-105 cursor-pointer"
+                className="w-full px-6 py-4 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-105 cursor-pointer"
                 style={{
-                  background: 'linear-gradient(to bottom, #228B22, #006400)',
-                  color: '#F5F5DC',
+                  ...getButtonColors('success'),
                   boxShadow: '0 4px 8px rgba(34, 139, 34, 0.3)'
                 }}
               >
@@ -272,10 +273,10 @@ export default function GameSpinnerPage() {
               {/* Secondary Action */}
               <button
                 onClick={() => startNewGame()}
-                className="px-4 py-3 rounded transition-all duration-200 hover:scale-105 text-sm cursor-pointer"
+                className="w-full px-6 py-4 rounded-lg font-bold text-lg transition-all duration-200 hover:scale-105 cursor-pointer"
                 style={{
-                  background: 'linear-gradient(to bottom, #8B1538, #6B0F2A)',
-                  color: '#F5F5DC'
+                  ...getButtonColors('danger'),
+                  boxShadow: '0 4px 8px rgba(139, 21, 56, 0.3)'
                 }}
               >
                 🔄 Start New Game
@@ -285,24 +286,24 @@ export default function GameSpinnerPage() {
         )}
 
         {/* Game Spinner */}
-        <div className="flex justify-center mb-12">
-          <div className="w-80 h-80 flex items-center justify-center relative z-10">
+        <div className="flex justify-center mb-12 sm:mb-16">
+          <div className="w-full max-w-sm flex flex-col items-center justify-center py-4">
             {loading ? (
-              <div className="flex items-center justify-center w-full h-full rounded-full" style={{
-                backgroundColor: 'rgba(92, 64, 51, 0.3)',
-                border: '2px solid #5C4033'
+              <div className="flex items-center justify-center w-80 h-80 rounded-full" style={{
+                backgroundColor: `${getBackgroundColor(true)}33`,
+                border: `2px solid ${getBorderColor()}`
               }}>
-                <div className="text-center" style={{ color: '#F5F5DC' }}>
+                <div className="text-center" style={{ color: getTextColor('primary') }}>
                   <div className="text-2xl mb-2">⏳</div>
                   <div>Loading games...</div>
                 </div>
               </div>
             ) : games.length === 0 ? (
-              <div className="flex items-center justify-center w-full h-full rounded-full" style={{
-                backgroundColor: 'rgba(92, 64, 51, 0.3)',
-                border: '2px solid #5C4033'
+              <div className="flex items-center justify-center w-80 h-80 rounded-full" style={{
+                backgroundColor: `${getBackgroundColor(true)}33`,
+                border: `2px solid ${getBorderColor()}`
               }}>
-                <div className="text-center" style={{ color: '#F5F5DC' }}>
+                <div className="text-center" style={{ color: getTextColor('primary') }}>
                   <div className="text-4xl mb-4">🎲</div>
                   <div className="text-lg mb-2">No games yet!</div>
                   <div className="text-sm opacity-75">Add some games below to get started</div>
@@ -318,22 +319,22 @@ export default function GameSpinnerPage() {
         </div>
 
         {/* Game Management */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Add Game Form */}
-          <div className="p-6 rounded-lg" style={{
-            backgroundColor: 'rgba(92, 64, 51, 0.3)',
-            border: '1px solid #5C4033'
+          <div className="p-4 sm:p-6 rounded-lg" style={{
+            backgroundColor: getBackgroundColor(true) + '4D',
+            border: `1px solid ${getBorderColor()}`
           }}>
-            <h3 className="text-xl font-bold mb-4" style={{ 
+            <h3 className="text-lg sm:text-xl font-bold mb-4" style={{ 
               fontFamily: 'serif',
-              color: '#F5F5DC' 
+              color: getTextColor('primary') 
             }}>
               🎲 Add New Game
             </h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#F5F5DC' }}>
+                <label className="block text-sm font-medium mb-2" style={{ color: getTextColor('primary') }}>
                   Search Board Games
                 </label>
                 <BoardGameSearch
@@ -356,12 +357,12 @@ export default function GameSpinnerPage() {
           </div>
 
           {/* Game List */}
-          <div className="p-6 rounded-lg" style={{
+          <div className="p-4 sm:p-6 rounded-lg" style={{
             backgroundColor: 'rgba(92, 64, 51, 0.3)',
             border: '1px solid #5C4033'
           }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold" style={{ 
+              <h3 className="text-lg sm:text-xl font-bold" style={{ 
                 fontFamily: 'serif',
                 color: '#F5F5DC' 
               }}>
