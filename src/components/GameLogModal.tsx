@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { logGame } from '@/lib/game-service'
-import { colors, getBackgroundColor, getBorderColor, getTextColor, getButtonColors } from '@/styles/colors'
+import { getBackgroundColor, getBorderColor } from '@/styles/colors'
 
 interface AvailableGame {
   id: string

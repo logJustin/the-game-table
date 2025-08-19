@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 export default function UITest() {
   return (
     <div className="min-h-screen p-8 bg-gray-100">

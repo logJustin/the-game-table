@@ -20,7 +20,7 @@ export default function DatabaseTest() {
       addResult('🔍 Testing database connection...')
       
       // Test 1: Basic connection
-      const { data, error } = await supabase.from('available_games').select('count').limit(1)
+      const { error } = await supabase.from('available_games').select('count').limit(1)
       if (error) {
         addResult(`❌ Database connection error: ${error.message}`)
         addResult(`❌ Error details: ${JSON.stringify(error, null, 2)}`)

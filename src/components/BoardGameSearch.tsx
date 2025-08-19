@@ -69,7 +69,7 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
     }
     
     loadPopularGames()
-  }, [excludeGames])
+  }, [excludeGames]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle search with debouncing and external fallback
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
         abortControllerRef.current.abort()
       }
     }
-  }, [query])
+  }, [query]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle clicking outside to close results
   useEffect(() => {

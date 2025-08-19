@@ -26,7 +26,7 @@ export default function SchemaCheck() {
         
         try {
           // Try to get column info by doing a select with limit 0
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from(tableName)
             .select('*')
             .limit(0)
@@ -45,7 +45,7 @@ export default function SchemaCheck() {
       addResult('🔄 Attempting to add missing bgg_id column...')
       
       // First, check if we can query current_games with bgg_id
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('current_games')
         .select('bgg_id')
         .limit(1)
@@ -76,7 +76,7 @@ export default function SchemaCheck() {
     
     try {
       // Try to add the missing column using SQL
-      const { data, error } = await supabase.rpc('exec_sql', {
+      const { error } = await supabase.rpc('exec_sql', {
         sql: 'ALTER TABLE current_games ADD COLUMN IF NOT EXISTS bgg_id TEXT;'
       })
       

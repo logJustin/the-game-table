@@ -82,7 +82,7 @@ export default function GameSpinner({
     // Draw pointer
     drawPointer(ctx, centerX, centerY)
 
-  }, [games, rotation])
+  }, [games, rotation]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const drawEmptyWheel = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number) => {
     // Draw base wooden circle
