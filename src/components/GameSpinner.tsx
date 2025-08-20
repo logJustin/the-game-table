@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 interface Game {
   id: string
   name: string
-  addedBy: string
+  addedBy?: string
   image?: string
   bggId?: string
 }

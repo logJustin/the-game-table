@@ -52,7 +52,7 @@ export default function Navigation() {
     if (isInTestGroup && isDevelopment) {
       setIsTestGroupExpanded(true)
     }
-  }, [isInTestGroup]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isInTestGroup])
 
   return (
     <>
