@@ -33,16 +33,76 @@ const CORS_PROXIES = [
   'https://thingproxy.freeboard.io/fetch/'
 ]
 
-// Try multiple CORS proxies with fallback
+// Circuit breaker state for CORS proxies
+interface CircuitBreakerState {
+  failures: number
+  lastFailure: number
+  isOpen: boolean
+}
+
+const circuitBreakers: Map<string, CircuitBreakerState> = new Map()
+const CIRCUIT_BREAKER_THRESHOLD = 3
+const CIRCUIT_BREAKER_TIMEOUT = 30000 // 30 seconds
+
+// Check if circuit breaker is open for a proxy
+function isCircuitBreakerOpen(proxy: string): boolean {
+  const state = circuitBreakers.get(proxy)
+  if (!state || !state.isOpen) return false
+  
+  // Reset if timeout passed
+  if (Date.now() - state.lastFailure > CIRCUIT_BREAKER_TIMEOUT) {
+    state.isOpen = false
+    state.failures = 0
+    return false
+  }
+  
+  return true
+}
+
+// Record failure for circuit breaker
+function recordFailure(proxy: string, isRateLimit: boolean = false) {
+  const state = circuitBreakers.get(proxy) || { failures: 0, lastFailure: 0, isOpen: false }
+  state.failures++
+  state.lastFailure = Date.now()
+  
+  // Rate limiting triggers circuit breaker faster
+  const threshold = isRateLimit ? 1 : CIRCUIT_BREAKER_THRESHOLD
+  if (state.failures >= threshold) {
+    state.isOpen = true
+    console.warn(`Circuit breaker opened for proxy: ${proxy}`)
+  }
+  
+  circuitBreakers.set(proxy, state)
+}
+
+// Record success for circuit breaker
+function recordSuccess(proxy: string) {
+  const state = circuitBreakers.get(proxy)
+  if (state) {
+    state.failures = 0
+    state.isOpen = false
+  }
+}
+
+// Try multiple CORS proxies with circuit breaker and exponential backoff
 async function fetchWithCORSFallback(url: string, options: RequestInit = {}): Promise<Response> {
   const errors: string[] = []
+  let baseDelay = 1000 // Start with 1 second
   
   for (let i = 0; i < CORS_PROXIES.length; i++) {
     const proxy = CORS_PROXIES[i]
+    
+    // Skip if circuit breaker is open
+    if (isCircuitBreakerOpen(proxy)) {
+      errors.push(`Proxy ${i + 1} circuit breaker is open`)
+      continue
+    }
+    
     const proxyUrl = `${proxy}${encodeURIComponent(url)}`
     
     try {
       console.log(`Trying CORS proxy ${i + 1}/${CORS_PROXIES.length}: ${proxy}`)
+      
       const response = await fetch(proxyUrl, {
         ...options,
         signal: AbortSignal.timeout(10000) // 10 second timeout per proxy
@@ -50,13 +110,25 @@ async function fetchWithCORSFallback(url: string, options: RequestInit = {}): Pr
       
       if (response.ok) {
         console.log(`CORS proxy ${i + 1} succeeded`)
+        recordSuccess(proxy)
         return response
+      } else if (response.status === 429) {
+        // Rate limited - trigger circuit breaker and exponential backoff
+        errors.push(`Proxy ${i + 1} rate limited (${response.status})`)
+        recordFailure(proxy, true)
+        
+        // Exponential backoff for rate limiting
+        console.warn(`Rate limited by ${proxy}, waiting ${baseDelay}ms before trying next`)
+        await new Promise(resolve => setTimeout(resolve, baseDelay))
+        baseDelay *= 2 // Double the delay for next attempt
       } else {
         errors.push(`Proxy ${i + 1} returned ${response.status}: ${response.statusText}`)
+        recordFailure(proxy)
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
       errors.push(`Proxy ${i + 1} failed: ${errorMsg}`)
+      recordFailure(proxy)
       console.warn(`CORS proxy ${i + 1} failed:`, error)
     }
   }
@@ -194,7 +266,10 @@ export const POPULAR_GAMES: BoardGame[] = [
 // Dynamic cache for API-fetched games (persisted in localStorage)
 let dynamicGameCache: BoardGame[] = []
 
-// Load cached games from localStorage on startup
+// Image URL cache for BGG API responses (separate from game data cache)
+let imageCache: Map<string, string> = new Map()
+
+// Load cached games and image URLs from localStorage on startup
 function loadCachedGames(): BoardGame[] {
   if (typeof window === 'undefined') return []
   
@@ -209,6 +284,37 @@ function loadCachedGames(): BoardGame[] {
     console.warn('Failed to load game cache:', error)
   }
   return []
+}
+
+// Load image URL cache from localStorage
+function loadImageCache(): Map<string, string> {
+  if (typeof window === 'undefined') return new Map()
+  
+  try {
+    const cached = localStorage.getItem('bgg-image-cache')
+    if (cached) {
+      const parsed = JSON.parse(cached) as Record<string, string>
+      const cache = new Map(Object.entries(parsed))
+      console.log(`Loaded ${cache.size} image URLs from cache`)
+      return cache
+    }
+  } catch (error) {
+    console.warn('Failed to load image cache:', error)
+  }
+  return new Map()
+}
+
+// Save image URL cache to localStorage
+function saveImageCache() {
+  if (typeof window === 'undefined') return
+  
+  try {
+    const cacheObj = Object.fromEntries(imageCache.entries())
+    localStorage.setItem('bgg-image-cache', JSON.stringify(cacheObj))
+    console.log(`Saved ${imageCache.size} image URLs to cache`)
+  } catch (error) {
+    console.warn('Failed to save image cache:', error)
+  }
 }
 
 // Save games to localStorage cache
@@ -233,9 +339,10 @@ function addToCache(game: BoardGame) {
   }
 }
 
-// Initialize cache on module load
+// Initialize caches on module load
 if (typeof window !== 'undefined') {
   dynamicGameCache = loadCachedGames()
+  imageCache = loadImageCache()
 }
 
 // Extended game database for search (static + dynamic)
@@ -373,9 +480,27 @@ async function searchBGGExternal(query: string): Promise<BGGSearchResult[]> {
   }
 }
 
-// Get detailed board game info from BGG API
+// Get detailed board game info from BGG API with image caching
 async function getBGGGameDetails(id: string): Promise<BoardGame | null> {
   try {
+    // Check if we have cached image URLs for this game
+    const cachedImage = imageCache.get(`${id}-image`)
+    const cachedThumbnail = imageCache.get(`${id}-thumbnail`)
+    
+    // If we have both cached images, check if we have the full game data in our cache
+    if (cachedImage || cachedThumbnail) {
+      const allGames = getCombinedGameDatabase()
+      const existingGame = allGames.find(game => game.id === id)
+      if (existingGame) {
+        // Return existing game with cached images
+        return {
+          ...existingGame,
+          image: cachedImage || existingGame.image,
+          thumbnail: cachedThumbnail || existingGame.thumbnail
+        }
+      }
+    }
+    
     const bggUrl = `${BGG_THING_URL}?id=${id}`
     const response = await fetchWithCORSFallback(bggUrl)
     
@@ -397,11 +522,27 @@ async function getBGGGameDetails(id: string): Promise<BoardGame | null> {
     const maxPlayersElement = item.querySelector('maxplayers')
     const playingTimeElement = item.querySelector('playingtime')
     
+    const image = imageElement?.textContent
+    const thumbnail = thumbnailElement?.textContent
+    
+    // Cache the image URLs for future use
+    if (image) {
+      imageCache.set(`${id}-image`, image)
+    }
+    if (thumbnail) {
+      imageCache.set(`${id}-thumbnail`, thumbnail)
+    }
+    
+    // Save image cache to localStorage
+    if (image || thumbnail) {
+      saveImageCache()
+    }
+    
     return {
       id,
       name: nameElement?.getAttribute('value') || '',
-      image: imageElement?.textContent || undefined,
-      thumbnail: thumbnailElement?.textContent || undefined,
+      image: image || undefined,
+      thumbnail: thumbnail || undefined,
       yearPublished: yearElement ? parseInt(yearElement.getAttribute('value') || '0') : undefined,
       minPlayers: minPlayersElement ? parseInt(minPlayersElement.getAttribute('value') || '0') : undefined,
       maxPlayers: maxPlayersElement ? parseInt(maxPlayersElement.getAttribute('value') || '0') : undefined,
@@ -570,10 +711,12 @@ export function getCacheStats() {
 
 export function clearGameCache() {
   dynamicGameCache = []
+  imageCache.clear()
   if (typeof window !== 'undefined') {
     localStorage.removeItem('bgg-game-cache')
+    localStorage.removeItem('bgg-image-cache')
   }
-  console.log('Game cache cleared')
+  console.log('Game cache and image cache cleared')
 }
 
 export function exportGameCache(): BoardGame[] {
@@ -600,7 +743,10 @@ export function createCustomGame(name: string): BoardGame {
   return customGame
 }
 
-// Load images for popular games dynamically while maintaining order
+// Batched image loading to reduce API calls
+let imageLoadQueue: Map<string, Promise<BoardGame | null>> = new Map()
+
+// Load images for popular games with graceful degradation and fallback
 export async function loadPopularGameImages(
   games: BoardGame[], 
   onUpdate?: (updatedGames: BoardGame[]) => void
@@ -608,40 +754,83 @@ export async function loadPopularGameImages(
   // Create a results array to maintain order
   const results = [...games]
   
-  // Process each game sequentially to maintain order
+  // Check cache first and identify games that need image loading
+  const gamesToLoad: { index: number; game: BoardGame }[] = []
+  
   for (let i = 0; i < games.length; i++) {
     const game = games[i]
     
-    // Skip if already has image
-    if (game.image) {
-      continue
-    }
+    // Check if we have cached images
+    const cachedImage = imageCache.get(`${game.id}-image`)
+    const cachedThumbnail = imageCache.get(`${game.id}-thumbnail`)
     
-    // Add delay to stagger requests (prevent overwhelming BGG API)
-    if (i > 0) {
-      await new Promise(resolve => setTimeout(resolve, 300))
+    if (cachedImage || cachedThumbnail) {
+      // Use cached images immediately
+      results[i] = {
+        ...game,
+        image: cachedImage || game.image,
+        thumbnail: cachedThumbnail || game.thumbnail
+      }
+    } else if (!game.image && !game.thumbnail) {
+      // Queue for loading only if no images at all
+      gamesToLoad.push({ index: i, game })
+    }
+  }
+  
+  // If all images are cached, return immediately
+  if (gamesToLoad.length === 0) {
+    console.log(`All ${games.length} popular game images loaded from cache`)
+    return results
+  }
+  
+  // Graceful degradation: If too many games need loading, skip some
+  const maxGamesToLoad = Math.min(gamesToLoad.length, 5) // Limit to 5 games max
+  const prioritizedGames = gamesToLoad.slice(0, maxGamesToLoad)
+  
+  if (gamesToLoad.length > maxGamesToLoad) {
+    console.log(`Limiting image loading to ${maxGamesToLoad} out of ${gamesToLoad.length} games to prevent rate limiting`)
+  }
+  
+  // Process games one at a time with longer delays to avoid rate limiting
+  for (let i = 0; i < prioritizedGames.length; i++) {
+    const { index, game } = prioritizedGames[i]
+    
+    // Check if we're already loading this game to avoid duplicates
+    let loadPromise = imageLoadQueue.get(game.id)
+    if (!loadPromise) {
+      loadPromise = getBGGGameDetails(game.id)
+      imageLoadQueue.set(game.id, loadPromise)
     }
     
     try {
-      const details = await getBGGGameDetails(game.id)
-      if (details?.thumbnail) {
-        // Update the specific game in the results array
-        results[i] = {
+      const details = await loadPromise
+      if (details?.thumbnail || details?.image) {
+        results[index] = {
           ...game,
-          thumbnail: details.thumbnail,
-          image: details.image
+          thumbnail: details.thumbnail || game.thumbnail,
+          image: details.image || game.image
         }
         
-        // Call update callback if provided (for progressive updates)
+        // Call update callback after each successful load
         if (onUpdate) {
           onUpdate([...results])
         }
       }
     } catch (error) {
-      console.warn(`Failed to load image for ${game.name}:`, error)
+      console.warn(`Failed to load image for ${game.name}, continuing without image:`, error)
+      // Game remains without image, but we continue
+    } finally {
+      // Clean up queue entry
+      imageLoadQueue.delete(game.id)
+    }
+    
+    // Longer delay between requests to be more respectful to APIs
+    if (i < prioritizedGames.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second between requests
     }
   }
   
-  console.log(`Loaded images for ${results.filter(g => g.image).length}/${games.length} popular games`)
+  const loadedCount = results.filter(g => g.image || g.thumbnail).length
+  console.log(`Loaded images for ${loadedCount}/${games.length} popular games (${prioritizedGames.length} attempted)`)
   return results
 }
