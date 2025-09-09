@@ -744,7 +744,7 @@ export function createCustomGame(name: string): BoardGame {
 }
 
 // Batched image loading to reduce API calls
-let imageLoadQueue: Map<string, Promise<BoardGame | null>> = new Map()
+const imageLoadQueue: Map<string, Promise<BoardGame | null>> = new Map()
 
 // Load images for popular games with graceful degradation and fallback
 export async function loadPopularGameImages(

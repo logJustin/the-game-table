@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { searchBoardGames, searchBoardGamesExternal, createBoardGameFromSearch, getPopularGames, loadSearchResultImages, loadPopularGameImages, createCustomGame, type BGGSearchResult, type BoardGame } from '@/lib/boardgamegeek'
 
 interface BoardGameSearchProps {
@@ -311,9 +312,11 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                 >
                   <div className="w-12 h-12 flex-shrink-0 rounded border" style={{ borderColor: '#B8860B' }}>
                     {result.thumbnail ? (
-                      <img 
+                      <Image 
                         src={result.thumbnail} 
                         alt={result.name}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover rounded"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
@@ -421,9 +424,11 @@ export default function BoardGameSearch({ onGameSelected, playerName, placeholde
                   >
                     <div className="w-12 h-12 flex-shrink-0 rounded border" style={{ borderColor: '#B8860B' }}>
                       {game.image ? (
-                        <img 
+                        <Image 
                           src={game.image} 
                           alt={game.name}
+                          width={48}
+                          height={48}
                           className="w-full h-full object-cover rounded"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'

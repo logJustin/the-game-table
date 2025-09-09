@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import GameSpinner from '@/components/GameSpinner'
 import BoardGameSearch from '@/components/BoardGameSearch'
 import GameLogModal from '@/components/GameLogModal'
@@ -402,9 +403,11 @@ export default function GameSpinnerPage() {
                   >
                     {game.game_image && (
                       <div className="flex-shrink-0">
-                        <img 
+                        <Image 
                           src={game.game_image} 
                           alt={game.game_name}
+                          width={48}
+                          height={48}
                           className="w-12 h-12 object-cover rounded border-2"
                           style={{ borderColor: '#B8860B' }}
                           onError={(e) => {
